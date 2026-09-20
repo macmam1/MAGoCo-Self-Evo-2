@@ -207,8 +207,12 @@ agents:
     main:
       - provider: openai
         model: gpt-4o-mini
-      - provider: 9router
+        baseUrl: https://api.openai.com/v1
+      - provider: anthropic
+        model: claude-3-5-haiku-20241022
+      - provider: 9router          # custom: same openai adapter, different baseUrl
         model: all
+        baseUrl: https://9router.example/v1
   tiers:
     fast: { model: gpt-4o-mini }
     balanced: { model: gpt-4o-mini }
@@ -245,19 +249,45 @@ Real assertions, and a clear bar for each.
    created and working memory shrinks to `keepLast`.
 6. **End-to-end scenario (§5 of MASTER_PLAN).** A real agent, real store, real tool —
    answers a question using the tool and records an outcome. Run by `scripts/test-core.sh`.
+7. **Live-LLM suite (opt-in, separate).** A suite that must never gate the main one:
+   - `test/live/smoke.test.ts` — the real adapter against the test endpoint:
+     a real completion, a real tool call, real streaming chunks parsed.
+   - `test/live/local.test.ts` — llama.cpp with Qwen2.5-0.5B-Instruct, asserting the
+     **protocol** (connect, round-trip, stream parse, correct termination, a malformed
+     tool call handled softly) and never asserting model intelligence. A weak model
+     cannot run ReAct reliably, and this suite must not depend on it.
+   - Reads credentials from the environment at runtime only. No key is ever written to
+     the repo, and no part of this suite runs without the env present.
+   - Skipped silently when the env is absent, so the main suite stays offline and CI-safe.
 
 Existing 28 tests stay green. `tsc --noEmit` stays clean.
 
-## 7. Open decisions — I need your call
+## 7. Decisions (resolved 2026-09-20)
 
-1. **Built-in LLM providers.** My proposal: ship an OpenAI-compatible client (covers
-   OpenAI, most local servers, and 9router through its OpenAI endpoint) plus a
-   deterministic scripted provider for tests. Everything else is a plugin later. This
-   keeps `packages/core` dependency-free and phase 1 honest.
-2. **Streaming in phase 1, or phase 2 with the UI?** The spec carries it; it can be cut
-   to one chunked test and deferred if you want the loop sooner.
-3. **Summarizer provider.** Compaction needs an LLM. Default: the router at tier `fast`.
-   Alternative: a cheap deterministic summarizer so memory tests never touch a network.
+1. **Built-in providers: two adapters.**
+   - `openai` — the OpenAI-compatible API. One adapter covers OpenAI, Azure, xAI,
+     DeepSeek, Qwen, Mistral, Groq, OpenRouter, Together, Fireworks, Cohere, every
+     local server (Ollama, llama.cpp, LM Studio, vLLM, SGLang), and 9router.
+   - `anthropic` — a separate adapter. The Anthropic wire format is genuinely
+     different (system outside `messages`, `tool_use` / `tool_result` content blocks,
+     mandatory `max_tokens`), so it cannot ride on the OpenAI path.
+   - Everything beyond these two is a plugin providing `magoco.llm.complete`.
+   - A custom provider = plugin folder + one line of config. `packages/core` stays
+     dependency-free; the adapters live in `packages/agents` and speak `fetch` only.
+2. **Streaming: backend in phase 1, UI in phase 2.** The router's `stream` contract is
+   part of the capability surface. Deferring it would force phase 2 to reopen
+   `magoco.llm.complete`, which is exactly the rewrite §1.5 forbids. Parsing SSE once
+   now is cheap; rendering it belongs with the UI.
+3. **Memory summarizer: the router at tier `fast` in production, a deterministic
+   scripted summarizer in tests** — memory tests stay offline and CI-safe.
+4. **Local-LLM test: llama.cpp + Qwen2.5-0.5B-Instruct (GGUF).** The smallest model that
+   still emits the OpenAI tool-calling format correctly. It rides the same
+   OpenAI-compatible path as Ollama / vLLM, so it is the cheapest real proof of the
+   §2.9 "local LLM" capability without building a second adapter. Non-deterministic, so
+   it lives in a separate opt-in suite (§6.7) — it never gates the main suite.
+5. **Test credentials never enter the repo.** The phase-1 smoke test reads its key from
+   the environment at runtime. Nothing is committed, and the key is revoked as soon as
+   the adapter is verified.
 
 ---
 
