@@ -1,0 +1,3 @@
+patch:
+  config:
+    greeting: hi

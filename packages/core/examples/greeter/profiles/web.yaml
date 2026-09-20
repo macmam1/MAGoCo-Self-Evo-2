@@ -1,0 +1,6 @@
+extends: base
+patch:
+  plugins:
+    greeter: true
+  config:
+    greeting: Hello from MAGoCo

@@ -25,6 +25,12 @@ logs/
 .DS_Store
 Thumbs.db
 
+# pnpm
+.pnpm-store/
+
+# Runtime data
+.magoco/
+
 # Test & coverage
 coverage/
 .nyc_output/
