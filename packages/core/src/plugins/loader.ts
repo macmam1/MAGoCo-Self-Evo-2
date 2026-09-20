@@ -38,6 +38,11 @@ type LoadFn = () => Promise<PluginModule>;
 /** Events a plugin may emit during registration, plumbed from the runtime. */
 export interface PluginHooks {
   readonly emit: (capability: string, type: string, payload: unknown) => void;
+  /**
+   * Runtime profile config, so plugins can read settings the operator chose
+   * (port, model, endpoints) instead of only what their own config.yaml ships.
+   */
+  readonly profileConfig?: () => Record<string, unknown>;
 }
 
 /**
@@ -109,7 +114,7 @@ export class PluginLoader {
 
       await mod.register({
         registry: this.registry,
-        config: readConfig(pluginDir),
+        config: { ...readConfig(pluginDir), ...(this.hooks.profileConfig?.() ?? {}) },
         dir: pluginDir,
         emit: this.hooks.emit,
       });

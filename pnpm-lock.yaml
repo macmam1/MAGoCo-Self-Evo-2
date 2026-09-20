@@ -180,6 +180,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@magoco/agents':
+        specifier: workspace:*
+        version: link:../agents
       '@magoco/web':
         specifier: workspace:*
         version: link:../web

@@ -50,6 +50,7 @@ export type ClientFrame =
   | { readonly t: 'session_done'; readonly sessionId: string; readonly stopReason: string; readonly ms: number; readonly usage?: UsageView }
   | { readonly t: 'session_failed'; readonly sessionId: string; readonly error: string }
   | { readonly t: 'session_model'; readonly sessionId: string; readonly modelId: string }
+  | { readonly t: 'session_export'; readonly sessionId: string; readonly format: 'json' | 'md'; readonly body: string }
   | { readonly t: 'session_list'; readonly sessions: ReadonlyArray<SessionSummary> }
   | { readonly t: 'model_list'; readonly models: ReadonlyArray<ModelView> }
   | { readonly t: 'error'; readonly message: string };

@@ -6,7 +6,7 @@
  * (spec §1.5 mechanism 1).
  */
 export { serve, type ServeOptions, type ServeHandle } from './http.js';
-export { createSession } from './session.js';
+export { createSession, type ChatSession } from './session.js';
 export type {
   ClientCommand,
   ClientFrame,

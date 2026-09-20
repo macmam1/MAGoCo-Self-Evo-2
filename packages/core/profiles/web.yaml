@@ -6,4 +6,6 @@ patch:
     magoco.web.serve:
       port: 3837
       modelId: qwen2.5:0.5b
+      baseUrl: http://127.0.0.1:8432/v1
+      apiKey: local
       timeoutMs: 300000

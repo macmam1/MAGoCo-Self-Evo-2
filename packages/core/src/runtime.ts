@@ -44,7 +44,14 @@ export class Runtime {
     this.bus = new EventBus((e) => void this.sessionLog.append(e));
     this.registry = new CapabilityRegistry(this.log);
     this.profile = profile;
-    this.plugins = new PluginLoader(this.registry, { emit: (c, t, p) => this.emit(c, t, p) }, this.log);
+    this.plugins = new PluginLoader(
+      this.registry,
+      {
+        emit: (c, t, p) => this.emit(c, t, p),
+        profileConfig: () => ({ ...this.profile.config }),
+      },
+      this.log,
+    );
   }
 
   static async boot(opts: RuntimeOptions): Promise<Runtime> {
