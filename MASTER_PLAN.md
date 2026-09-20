@@ -1,7 +1,7 @@
-# MAGoCo-Self-Evo-2 — مستر پلن (درافت v۰.۱)
+# MAGoCo-Self-Evo-2 — مستر پلن (v1.0)
 
-> **وضعیت: درانتظار تایید. این فایل هنوز وارد ریپو نشده.**
-> پس از تایید کامل، در `macmam1/MAGoCo-Self-Evo-2` ثبت می‌شود.
+> **وضعیت: تاییدشده و ثبت‌شده در ریپو.** نسخه‌ی زنده: `MASTER_PLAN.md` در `macmam1/MAGoCo-Self-Evo-2`.
+> تغییر در این فایل فقط پس از تایید صریح کاربر و با یک کامیت مجزا انجام میشود.
 
 ---
 
@@ -23,8 +23,11 @@
 magoco/
 ├── packages/
 │   ├── core/                    # هسته TS: event bus, capability registry, session log
-│   │   ├── capabilities/        # تعریف سرویس‌ها (def)
+│   │   ├── capabilities/        # تعریف سرویس‌ها (def) + contract test هر کدام
 │   │   ├── plugins/             # پیاده‌سازها (provider) — همه‌ی ویژگی‌ها
+│   │   │   └── <plugin>/
+│   │   │       ├── plugin.yaml  # مانیفست: نام، وابستگی‌ها، capabilityهای ارائه‌شده
+│   │   │       └── ...
 │   │   ├── profiles/            # web / desktop / hf-space / modelscope / headless / sdk
 │   │   └── session/             # log بازسازی‌پذیر
 │   ├── ui/                      # React: Adaptive Canvas + چت + پنل‌ها + استیج
@@ -65,6 +68,17 @@ magoco/
 هر چیز دیگری (پلاگین‌ها، providers، UI panels) قابل تعویض است.
 
 **معیار موفقیت:** اضافه‌کردن یک قابلیت جدید = پوشه‌ی جدید + یک مانیفست + صفر خط تغییر در کدهای هسته یا سایر پلاگین‌ها.
+
+---
+
+## بخش ۲: چک‌لیست کامل قابلیت‌ها (از ۲۴ پروژه — هیچ‌کم نباید)
+
+### ۲.۰ پایه‌ی زیرساخت (پیش‌نیاز همه‌ی فازها)
+- [ ] لایه‌ی persistence: SQLite (پیش‌فرض، بدون نیاز به سرویس بیرونی) + Postgres (اختیاری)
+- [ ] لایه‌ی logging ساختاریافته + levels + rotation
+- [ ] لایه‌ی retry و error handling با backoff
+- [ ] test harness واقعی: unit + integration + contract
+- [ ] CI: تست و typecheck خودکار روی هر PR
 
 ---
 
@@ -263,7 +277,16 @@ magoco/
 ## بخش ۳: فازبندی اجرا (Dependency-ordered)
 
 **فاز ۰ — پایه‌ی معماری** (هیچ‌چیزِ دیگه بدون این کار نمیکنه)
-هسته‌ی event bus + capability registry + session log + profile/patch + رجیستری پلاگین + bootstrap پروفایل `web`.
+۱. event bus (typed pub/sub + replay از session log)
+۲. capability registry (تعریف / پیاده‌ساز / مصرف‌کننده + lookup)
+۳. session log (append-only + بازسازی state کامل)
+۴. profile/patch (YAML + جایگزینی هر سطر کانفیگ)
+۵. plugin loader (کشف `plugin.yaml` + load/unload + انزوا)
+۶. persistence + logging + retry + error handling
+۷. پروفایل `web` و `headless` (bootstrap)
+۸. CLI: `magoco --profile web` → هسته رو بوت کن، pluginها رو بارگذاری کن، یک capability رو اجرا کن
+۹. test harness: unit + integration + contract (همه به‌صورت واقعی اجرا و پاس بشن)
+۱۰. docs: معماری هسته + راهنمای نوشتن پلاگین
 
 **فاز ۱ — هسته‌ی ایجنت**
 حلقه‌ی ReAct واقعی + function-calling + ۳ لایه حافظه + LLM router (پیش‌فرض + سفارشی) + streaming.
@@ -293,16 +316,19 @@ reflection + pattern mining + بهینه‌سازی پرامپت + A/B + rollbac
 **فاز ۹ — ادغام‌ها**
 کلاینت MCP + webhook + OAuth + custom connector + storage backends.
 
-**فاز ۱۰ — چندکاربره**
-workspaces + RBAC + collaboration زنده + comments + audit log + share links.
+**فاز ۱۰ — امنیت و احراز هویت**
+JWT/OAuth/2FA/API keys + secret store + rate limit + session management + password policies.
 
-**فاز ۱۱ — امنیت و آنالیتیکس**
-JWT/OAuth/2FA/API keys + secret store + rate limit + داشبورد آنالیتیکس + tracing + alerting.
+**فاز ۱۱ — چندکاربره و همکاری**
+workspaces + RBAC + team management + collaboration زنده + comments + audit log + share links.
 
-**فاز ۱۲ — بازارچه**
+**فاز ۱۲ — آنالیتیکس**
+داشبورد usage/cost + performance نمودار + tracing + error tracking + alerting + گزارش سفارشی + quotas.
+
+**فاز ۱۳ — بازارچه**
 marketplace‌ها + rating + fork + one-click install.
 
-**فاز ۱۳ — دیپلوی چندپلتفرمی**
+**فاز ۱۴ — دیپلوی چندپلتفرمی**
 desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 
 ---
@@ -319,15 +345,24 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 
 ## بخش ۵: تعریف «انجام‌شده»
 
-هر فاز فقط زمانی تمام‌شده است که:
+معیار «انجام‌شده» به ازای هر فاز متفاوت است:
+
+**برای فازهای زیرساختی (۰، ۱):**
 - چک‌لیست اون فاز تیک بخوره
-- یک تست واقعی (نه `assert x or not x`) اجرا بشه
-- یک کاربر واقعی بتونه اون قابلیت رو در UI استفاده کنه
+- یک تست واقعی (نه `assert x or not x`) اجرا و پاس بشه
 - مستندات اون بخش نوشته بشه
+- یک سناریوی واقعی قابل تکرار (مثلاً برنامه‌ی CLI که هسته رو بوت میکنه و یک capability رو اجرا میکنه)
+
+**برای فازهای دارای UI (۲ به بعد):**
+- همه‌ی موارد بالا، **به‌علاوه**:
+- یک کاربر واقعی بتونه اون قابلیت رو در UI استفاده کنه
 
 ---
 
-**این درافت هنوز وارد ریپو نشده.**
-۱. آیا چیزی از قلم افتاده یا اضافه‌ست؟
-۲. فازبندی درسته یا موردی باید جابجا بشه؟
-۳. تایید می‌کنی تا این رو در `macmam1/MAGoCo-Self-Evo-2` ثبت کنم (ریپو جدید رو می‌سازم)؟
+## بخش ۶: فرایند توسعه (عملیاتی)
+
+- **هر فاز = یک PR مجزا** با عنوان `feat(phase-N): ...`.
+- **هیچ فایلی بدون تایید صریح کاربر وارد main نمیشود.**
+- هر تغییر در `MASTER_PLAN.md` نیاز به یک کامیت مجزا با عنوان `docs: ...` دارد.
+- تعریف «انجام‌شده» بخش ۵ برای شروع فاز بعدی شرط است.
+
