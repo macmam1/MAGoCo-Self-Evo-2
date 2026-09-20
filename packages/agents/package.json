@@ -1,0 +1,18 @@
+{
+  "name": "@magoco/agents",
+  "version": "0.0.1",
+  "description": "MAGoCo agent core — LLM router, function calling, ReAct loop, memory wiring",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --import tsx ./test/**/*.test.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "tsx": "^4.19.0",
+    "@types/node": "^22.0.0"
+  }
+}
