@@ -90,9 +90,11 @@ export class PluginLoader {
         this.logger.warn('plugin dir name != manifest name, skipping', { dir: pluginDir });
         return;
       }
-      const entry = path.join(pluginDir, 'index.js');
-      if (!fs.existsSync(entry)) {
-        this.logger.warn('plugin has no index.js, skipping', { dir: pluginDir });
+      const entry = ['index.ts', 'index.js']
+        .map((f) => path.join(pluginDir, f))
+        .find((p) => fs.existsSync(p));
+      if (!entry) {
+        this.logger.warn('plugin has no index.ts/js, skipping', { dir: pluginDir });
         return;
       }
       // Plugins export their register/teardown either as the default export

@@ -1,7 +1,7 @@
 {
-  "name": "@magoco/ui",
+  "name": "@magoco/web",
   "version": "0.0.1",
-  "description": "MAGoCo browser client — framework-free ES modules",
+  "description": "MAGoCo HTTP + WebSocket server — magoco.web.* capabilities",
   "type": "module",
   "main": "./src/index.ts",
   "scripts": {
@@ -9,7 +9,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test --import tsx ./test/*.test.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "esbuild": "^0.28.0"
+  },
+  "peerDependencies": {
+    "@magoco/core": "workspace:*",
+    "@magoco/agents": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.6.0",
     "tsx": "^4.19.0",

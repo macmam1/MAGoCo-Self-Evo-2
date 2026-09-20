@@ -1,0 +1,9 @@
+extends: base
+patch:
+  plugins:
+    web: true
+  config:
+    magoco.web.serve:
+      port: 3837
+      modelId: qwen2.5:0.5b
+      timeoutMs: 300000

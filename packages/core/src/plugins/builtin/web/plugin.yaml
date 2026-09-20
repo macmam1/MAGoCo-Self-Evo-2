@@ -1,0 +1,6 @@
+name: web
+version: 0.1.0
+description: Serves the MAGoCo browser UI and streams chat sessions to it.
+provides:
+  - magoco.web.serve
+consumes: []

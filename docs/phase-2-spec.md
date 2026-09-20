@@ -228,28 +228,75 @@ This is the part that makes or breaks §1.5. Changes here:
 
 **If any of the top four rows changes, this phase has failed its own contract.**
 
-## 9. Risks and open decisions
+## 9. Decisions (final)
 
-- **Regenerate/edit/branching** — the biggest §2.10 item not in Phase 2. It
-  requires the loop to support "re-run from turn N with model M", which means
-  the trace must be forkable. That is real work; deferring it to **Phase 2.5**
-  (a point release, not a new phase) keeps Phase 2 shippable. *Decision
-  needed:* accept the deferral, or block Phase 2 on it?
-- **Voice / image / file upload** — deferred to Phase 4+ (multi-modal). Not a
-  Phase 2 risk, but it means §2.10 stays partly open. *Acknowledged, not
-  blocking.*
-- **Headless vs browser** — `profile: headless` (Phase 0 item 7) exists but
-  has no UI. Phase 2 makes `web` the default profile for interactive use;
-  `headless` remains for automation. *Decision needed:* is `web` the new
-  default, or must it always be explicit?
-- **Bundler reconsideration** — if the UI grows past a few hundred modules
-  without a bundler, `node --test` on raw ESM will stay fast but the browser
-  will make many round-trips. This is a Phase 3+ problem; §1.5 means adding a
-  bundler later is one build step, not a rewrite. *Not blocking.*
-- **The hand-rolled WebSocket** — the main "is this wise?" question. The
-  counter is §1.5 mechanism 1: the WS layer is behind `magoco.web.serve`, so
-  replacing it later touches no consumer. *Decision needed: accept, or pull
-  in `ws` (one dep) now?*
+1. **Branching / regenerate / edit → Phase 2.5, a point release.** Not deferred
+   because it is hard — `runLoop` already holds `messages`, so re-running from
+   turn N is a few lines. Deferred because it turns the conversation from a
+   **list into a tree**, and that change reaches the session log's replay, the
+   export format, search, and the UI's reducer. Meanwhile "ask again" (resent
+   the same user text) is already available in Phase 2 and covers ~90% of the
+   value. The remaining 10% is exactly the tree. Deferral is cheap; the data
+   model is what we are protecting.
+
+2. **`web` is NOT the default profile — it stays explicit.** The project's
+   identity is an automation framework. If bare `magoco` opens a server and
+   takes a port, that is the first thing that breaks in CI, containers, and
+   sandboxes — and every open socket is attack surface the headless path does
+   not want. Two explicit doors instead:
+   - `magoco run` → the automation primitive
+   - `magoco --profile web` → the interactive primitive
+   
+   Which one is the end-user default is a **Phase 14 (deploy)** question, not a
+   Phase 2 one. It is too early to decide.
+
+3. **WebSocket: hand-rolled, but with an explicit protocol scope line.** This
+   is the highest-risk decision in the spec and the "~150 lines" estimate in
+   §6.1 is not honest if done completely: handshake (SHA-1 + base64), frame
+   masking, continuation frames, ping/pong with status codes, 64-bit payloads.
+   A naive implementation that silently drops fragmentation passes tests
+   against Chrome and breaks against a real proxy — exactly the class of bug
+   that works in dev and dies in production.
+   
+   **Decision: keep it hand-rolled**, and narrow the scope so it is testable:
+   the server accepts **unfragmented text frames only**, supports ping/pong
+   and close-with-code, and **rejects fragmented and binary frames with close
+   code 1002** (`protocol error`) instead of mis-parsing them. That converts a
+   hidden failure into a visible, testable one. The engineering rule in play:
+   *write it yourself when failure is visible and testable; use a library when
+   failure only shows up in production.* That rejection test is what moves
+   this from the second column to the first.
+   
+   Security: because the socket sits behind `magoco.web.serve`, the blast
+   radius of a bug is the `magoco.session.*` event vocabulary, not the
+   framework's internals.
+   
+   **Commitment:** the moment binary or fragmented frames are needed (Phase 4,
+   voice/image), we switch to `ws` behind the same `magoco.web.serve` seam.
+   This is not "hand-rolled forever" — it is "hand-rolled for exactly the
+   subset we need now."
+
+4. **Adaptive Canvas level 1 gets its own issue, not a footnote in H.**
+   It was underspecified sitting on the fence between "in scope" and
+   "deferred". It is now scoped precisely: chat is the canvas; the sidebar
+   (sessions) and inspector (if present) collapse to a rail; no free-form
+   surface. That is level 1 of 3, and it is owned by #152, not buried.
+
+### 9.1 Protocol scope line (enforces decision 3)
+
+The server implements this and nothing else:
+
+| Frame | Supported | Notes |
+|---|---|---|
+| text (op 1), unfragmented | **yes** | All client→server commands |
+| binary (op 2) | **reject → close 1002** | No binary channel until Phase 4 |
+| fragmented (op 0 continuation) | **reject → close 1002** | Clients that fragment are non-conformant for our protocol |
+| ping (op 9) | **respond pong** | Heartbeat |
+| pong (op 10) | accept, ignore payload | |
+| close (op 8) | **honor code, close** | 1000 normal, 1002 protocol error |
+
+Any other opcode, any payload length encoding the server cannot decode, or
+any unmasked client frame → close 1002. This table is test T-W1b.
 
 ## 10. Done definition (§5 of the master plan)
 

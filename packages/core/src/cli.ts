@@ -16,6 +16,7 @@ interface CliArgs {
   profile: string;
   rootDir: string;
   exec?: string;
+  serve?: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -28,6 +29,7 @@ function parseArgs(argv: string[]): CliArgs {
       const v = argv[++i];
       if (typeof v === 'string') out.exec = v;
     }
+    if (a === '--serve' || a === '-s') out.serve = true;
     if (a === '--help' || a === '-h') {
       printHelp();
       process.exit(0);
@@ -50,7 +52,8 @@ function printHelp(): void {
       '  -e, --exec <command>   run a command and exit. Examples:',
       '                           list                     list bound capabilities',
       '                           call <cap> <json>        invoke a capability',
-      '  -h, --help             show this help',
+      '  -s, --serve            start the web server and stay up (Ctrl-C to stop)',
+  '  -h, --help             show this help',
       '',
     ].join('\n') + '\n',
   );
@@ -98,6 +101,29 @@ async function main(): Promise<void> {
   process.stdout.write('capabilities:\n');
   for (const c of rt.registry.list()) {
     process.stdout.write(`  ${c.capability}  <- ${c.plugin}\n`);
+  }
+
+  if (args.serve) {
+    // The interactive surface: boot the runtime, start the web server, stay
+    // up until Ctrl-C. Headless automation stays on `--exec`.
+    const provider = rt.registry.resolve<{ start(): Promise<{ close(): Promise<void> }> }>(
+      'magoco.web.serve',
+    );
+    if (typeof provider?.start !== 'function') {
+      process.stderr.write('fatal: magoco.web.serve is not provided; is the web plugin enabled?\n');
+      await rt.shutdown();
+      process.exit(1);
+    }
+    const handle = await provider.start();
+    process.stdout.write(`web server listening on 127.0.0.1 (handle acquired)\n`);
+    const stop = async () => {
+      await handle.close();
+      await rt.shutdown();
+      process.exit(0);
+    };
+    process.on('SIGINT', () => void stop());
+    process.on('SIGTERM', () => void stop());
+    return; // stay up
   }
 
   if (args.exec) {

@@ -1,5 +1,6 @@
 import * as crypto from 'node:crypto';
 import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { CapabilityRegistry } from './capabilities/registry.js';
 import type { CapabilityLogger, CapabilityContext } from './capabilities/types.js';
 import { EventBus } from './eventbus/bus.js';
@@ -55,6 +56,13 @@ export class Runtime {
 
     const dirs = [
       path.join(opts.rootDir, 'plugins'),
+      // Built-in plugins ship with the framework. They are first-class — a
+      // profile enables them with `plugins: web: true`, exactly like any other.
+      //
+      // import.meta.url resolves to the file itself; `dirname` twice reaches
+      // the package root so the builtin dir is found from src/, dist/ or a
+      // tsx-run source alike.
+      path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'src', 'plugins', 'builtin'),
       ...(opts.extraPluginDirs ?? []),
     ];
     // No `plugins:` key in the profile → every discovered plugin is enabled by

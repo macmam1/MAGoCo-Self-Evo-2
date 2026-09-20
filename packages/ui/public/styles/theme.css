@@ -1,0 +1,99 @@
+/**
+ * Theme tokens. Two themes, one set of variables — the JS just flips the
+ * attribute on <html>, CSS does the rest.
+ */
+:root {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --radius: 10px;
+  --max-width: 46rem;
+}
+
+html[data-theme='dark'] {
+  --bg: #0d0f12;
+  --bg-soft: #14171c;
+  --bg-softest: #1b1f26;
+  --border: #262b33;
+  --text: #e7e9ee;
+  --text-dim: #9aa1ad;
+  --text-faint: #6b7280;
+  --accent: #7c6cff;
+  --accent-soft: rgba(124, 108, 255, 0.14);
+  --good: #3fb98a;
+  --warn: #e5a23c;
+  --bad: #e5534b;
+  --code-bg: #111419;
+}
+
+html[data-theme='light'] {
+  --bg: #ffffff;
+  --bg-soft: #f6f7f9;
+  --bg-softest: #eceef2;
+  --border: #dfe3e9;
+  --text: #15181d;
+  --text-dim: #5a6270;
+  --text-faint: #8b93a0;
+  --accent: #6b57f5;
+  --accent-soft: rgba(107, 87, 245, 0.1);
+  --good: #1c8c5f;
+  --warn: #b9791b;
+  --bad: #d23a31;
+  --code-bg: #f2f3f6;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.ghost {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+button.ghost:hover { color: var(--text); }
+
+a { color: var(--accent); }
+
+pre, code { font-family: var(--font-mono); font-size: 13px; }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+}
+
+/** The streaming caret — shown while a run is in flight. */
+.cursor-blink {
+  display: inline-block;
+  width: 7px;
+  height: 1.05em;
+  background: var(--accent);
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+  border-radius: 1px;
+}
+@keyframes blink { 50% { opacity: 0; } }

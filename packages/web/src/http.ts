@@ -1,0 +1,159 @@
+/**
+ * The HTTP server (spec §6.1): serves the static UI and upgrades WebSocket
+ * connections. Node's built-in http only — no framework, no runtime deps.
+ *
+ * It binds 127.0.0.1 only. That is not a limitation, it is the security
+ * boundary for this phase: the UI is single-user and local until Phase 10.
+ */
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import type { AddressInfo } from 'node:net';
+import type { Socket } from 'node:net';
+import type { ClientCommand, ClientFrame } from './protocol.js';
+import { isClientCommand, PROTOCOL_VERSION } from './protocol.js';
+import { upgradeWebSocket, type WireFrame } from './ws.js';
+import { isTransformable, transformFile } from './transform.js';
+
+export interface ServeOptions {
+  /** Directory served at `/`. Defaults to ../ui/dist. */
+  readonly staticDir: string;
+  /** Re-read files from disk on every request when true (dev mode). */
+  readonly noCache: boolean;
+  /** Bind host. Hard-overridden to 127.0.0.1 — never 0.0.0.0. */
+  readonly host?: string;
+  readonly port?: number;
+  /** Handles a parsed command from a client. */
+  readonly onCommand: (cmd: ClientCommand, reply: (f: ClientFrame) => void) => void;
+  /** Called when a socket closes; the server drops it from its set. */
+  readonly onSocketClose?: () => void;
+}
+
+export interface ServeHandle {
+  readonly port: number;
+  readonly host: string;
+  readonly baseUrl: string;
+  close: () => Promise<void>;
+  /** Send a frame to every connected client. */
+  broadcast: (f: ClientFrame) => void;
+}
+
+const CONTENT_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.png': 'image/png',
+  '.woff2': 'font/woff2',
+};
+
+/**
+ * Start the server. Refuses to bind anything but the loopback interface.
+ *
+ * `host` is accepted in the options only so a caller cannot be tempted to
+ * pass 0.0.0.0 by accident — it is ignored and 127.0.0.1 is used.
+ */
+export function serve(opts: ServeOptions): Promise<ServeHandle> {
+  return new Promise((resolve, reject) => {
+    const host = '127.0.0.1';
+    const sockets = new Set<Socket>();
+    const senders = new Set<(f: ClientFrame) => void>();
+
+    const server = http.createServer((req, res) => {
+      // Static file serving. Unknown paths → 404, never a directory listing.
+      const urlPath = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+      // Prevent path traversal: anything that escapes staticDir is refused.
+      const resolved = path.resolve(opts.staticDir, '.' + (urlPath === '/' ? '/index.html' : urlPath));
+      if (!resolved.startsWith(path.resolve(opts.staticDir))) {
+        res.writeHead(403).end('forbidden');
+        return;
+      }
+      // Dev transform (spec §6.2, no bundler): `.ts` under /src is transformed
+      // to ESM on the fly. Everything else is served verbatim.
+      if (isTransformable(urlPath)) {
+        transformFile(opts.staticDir, urlPath)
+          .then((code) => {
+            res.writeHead(200, {
+              'content-type': 'text/javascript',
+              ...(opts.noCache ? { 'cache-control': 'no-store' } : {}),
+            });
+            res.end(code);
+          })
+          .catch(() => res.writeHead(404).end('not found'));
+        return;
+      }
+      fs.readFile(resolved, (err, data) => {
+        if (err) {
+          res.writeHead(404).end('not found');
+          return;
+        }
+        res.writeHead(200, {
+          'content-type': CONTENT_TYPES[path.extname(resolved)] ?? 'application/octet-stream',
+          ...(opts.noCache ? { 'cache-control': 'no-store' } : {}),
+        });
+        res.end(data);
+      });
+    });
+
+    server.on('upgrade', (req, socket: Socket) => {
+      // Only our own endpoint is upgraded; anything else is refused.
+      if ((req.url ?? '/') !== '/ws') {
+        socket.destroy();
+        return;
+      }
+      let handle: ReturnType<typeof upgradeWebSocket> = null;
+      const upgrade = upgradeWebSocket(
+        req,
+        socket,
+        (frame: WireFrame) => {
+          // A frame outside our scope already closed the socket in ws.ts.
+          if (frame.kind !== 'text') return;
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(frame.text);
+          } catch {
+            handle?.send({ kind: 'close', code: 1002, reason: 'invalid json' });
+            return;
+          }
+          if (!isClientCommand(parsed)) {
+            handle?.send({
+              kind: 'text',
+              text: JSON.stringify({ t: 'error', message: 'unknown command' }),
+            });
+            return;
+          }
+          opts.onCommand(parsed, (f) => handle?.send({ kind: 'text', text: JSON.stringify(f) }));
+        },
+        () => {
+          sockets.delete(socket);
+          senders.delete(reply);
+          opts.onSocketClose?.();
+        },
+      );
+      handle = upgrade;
+      if (!handle) return;
+      sockets.add(socket);
+      const reply = (f: ClientFrame) => handle.send({ kind: 'text', text: JSON.stringify(f) });
+      senders.add(reply);
+      reply({ t: 'hello', sessionId: null, version: PROTOCOL_VERSION });
+    });
+
+    server.on('error', reject);
+    server.listen(opts.port ?? 0, host, () => {
+      const addr = server.address() as AddressInfo;
+      const port = addr.port;
+      resolve({
+        port,
+        host,
+        baseUrl: `http://${host}:${port}`,
+        broadcast: (f) => { for (const s of senders) s(f); },
+        close: () => new Promise((r) => {
+          for (const s of sockets) s.destroy();
+          server.close(() => r());
+        }),
+      });
+    });
+  });
+}

@@ -9,7 +9,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test --import tsx ./test/**/*.test.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@magoco/web": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.6.0",
     "tsx": "^4.19.0",
