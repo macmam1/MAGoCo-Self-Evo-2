@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 total=0
-for pkg in core agents web ui; do
+for pkg in core agents web ui sandbox; do
   echo "────────── $pkg ──────────"
   if [ -d "packages/$pkg/test" ]; then
     out=$( cd "packages/$pkg" && node --test --import tsx ./test/*.test.ts 2>&1 )

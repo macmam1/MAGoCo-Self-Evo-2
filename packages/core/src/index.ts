@@ -20,3 +20,16 @@ export type { Profile, ResolvedProfile } from './profiles/loader.js';
 
 export { Runtime } from './runtime.js';
 export type { RuntimeOptions } from './runtime.js';
+
+export { WEB_SERVE_CAPABILITY, webServeDef } from './capabilities/web.js';
+export type { WebServeInstance, WebServeConfig } from './capabilities/web.js';
+export { FS_CAPABILITY, fsDef } from './capabilities/fs.js';
+export type {
+  FileSystemCapability,
+  FsEntry,
+  FsReadResult,
+  FsWriteOptions,
+  FsListOptions,
+  FsChangeEvent,
+  FsError,
+} from './capabilities/fs.js';

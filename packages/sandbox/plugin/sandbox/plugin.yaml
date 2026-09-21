@@ -1,0 +1,6 @@
+name: sandbox
+version: 0.1.0
+description: Project filesystem, code execution and terminal — the magoco.fs / magoco.code / magoco.term capabilities.
+provides:
+  - magoco.fs
+consumes: []

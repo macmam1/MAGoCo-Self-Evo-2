@@ -44,6 +44,9 @@ import {
   type LlmRequest,
   type LlmResponse,
 } from '@magoco/agents';
+import { FS_CAPABILITY, type FileSystemCapability } from '@magoco/core';
+import type { FsCommand, FsFrame } from '../../sandbox/src/fs-protocol.js';
+import { handleFsCommand } from '../../sandbox/src/fs-wire.js';
 
 export const manifest: PluginManifest = {
   name: 'web',
@@ -60,6 +63,21 @@ function sessionIdFrom(sessions: Map<string, ChatSession>): string | undefined {
 
 export function register(ctx: PluginRegisterContext): void {
   ctx.registry.registerDef(webServeDef);
+
+  // The sandbox capability: the /fs socket routes to it. Resolved lazily so
+  // the web plugin still boots in profiles that enable only `web` (spec §9
+  // decision 4 — the two plugins are independent).
+  interface FsProvider {
+    forSession(sessionId: string): Promise<FileSystemCapability>;
+  }
+  const sandbox: FsProvider | null = (() => {
+    try {
+      return ctx.registry.resolve<FsProvider>(FS_CAPABILITY);
+    } catch {
+      return null;
+    }
+  })();
+
 
   const cfg = (ctx.config[WEB_SERVE_CAPABILITY] ?? {}) as {
     port?: number;
@@ -134,6 +152,9 @@ export function register(ctx: PluginRegisterContext): void {
       if (!staticDir) staticDir = ctx.dir;
 
       const sessions = new Map<string, ChatSession>();
+      // The /fs socket has its own session id, assigned on `fs_init`. Until
+      // then the socket has no root and commands report E_NO_SESSION.
+      let socketSession = 's0';
       let counter = 0;
 
       const handle = await serve({
@@ -263,6 +284,33 @@ export function register(ctx: PluginRegisterContext): void {
             default:
               reply({ t: 'error', message: `command not implemented: ${(cmd as { c: string }).c}` });
           }
+        },
+        onFsCommand: async (cmd: FsCommand, reply: (f: FsFrame) => void) => {
+          // The /fs socket. The root lives in the sandbox plugin; the web
+          // plugin only routes. If the sandbox plugin is not enabled the
+          // capability is unbound and every command reports E_UNAVAILABLE
+          // instead of silently doing nothing.
+          const fail = (code: string, message: string): void => {
+            reply({ t: 'fs_error', code, message });
+          };
+          if (!sandbox) {
+            fail('E_UNAVAILABLE', 'the sandbox plugin is not enabled in this profile');
+            return;
+          }
+          // `fs_init` creates the root for this socket's session; the other
+          // commands need an already-created one. The session id is the
+          // socket's first `fs_init`, which is why it must come first.
+          let fs: FileSystemCapability;
+          try {
+            fs = await sandbox.forSession(socketSession);
+          } catch (e) {
+            fail('E_INTERNAL', String((e as Error).message ?? e));
+            return;
+          }
+          if (cmd.t === 'fs_init') {
+            socketSession = 's' + (counter += 1);
+          }
+          handleFsCommand(fs, cmd, reply, reply);
         },
       });
 

@@ -12,6 +12,8 @@ import type { AddressInfo } from 'node:net';
 import type { Socket } from 'node:net';
 import type { ClientCommand, ClientFrame } from './protocol.js';
 import { isClientCommand, PROTOCOL_VERSION } from './protocol.js';
+import type { FsCommand, FsFrame } from '../../sandbox/src/fs-protocol.js';
+import { isFsCommand } from '../../sandbox/src/fs-protocol.js';
 import { upgradeWebSocket, type WireFrame } from './ws.js';
 import { isTransformable, transformFile } from './transform.js';
 
@@ -23,8 +25,13 @@ export interface ServeOptions {
   /** Bind host. Hard-overridden to 127.0.0.1 — never 0.0.0.0. */
   readonly host?: string;
   readonly port?: number;
-  /** Handles a parsed command from a client. */
+  /** Handles a parsed chat command from a client. */
   readonly onCommand: (cmd: ClientCommand, reply: (f: ClientFrame) => void) => void;
+  /** Handles a parsed filesystem command from a client (the /fs socket). */
+  readonly onFsCommand?: (
+    cmd: FsCommand,
+    reply: (f: FsFrame) => void,
+  ) => void;
   /** Called when a socket closes; the server drops it from its set. */
   readonly onSocketClose?: () => void;
 }
@@ -98,8 +105,9 @@ export function serve(opts: ServeOptions): Promise<ServeHandle> {
     });
 
     server.on('upgrade', (req, socket: Socket) => {
-      // Only our own endpoint is upgraded; anything else is refused.
-      if ((req.url ?? '/') !== '/ws') {
+      const url = req.url ?? '/';
+      // Only our own endpoints are upgraded; anything else is refused.
+      if (url !== '/ws' && url !== '/fs') {
         socket.destroy();
         return;
       }
@@ -115,6 +123,12 @@ export function serve(opts: ServeOptions): Promise<ServeHandle> {
             parsed = JSON.parse(frame.text);
           } catch {
             handle?.send({ kind: 'close', code: 1002, reason: 'invalid json' });
+            return;
+          }
+          // The filesystem channel has its own command vocabulary; route it
+          // before the chat one so the two never see each other's frames.
+          if (isFsCommand(parsed)) {
+            opts.onFsCommand?.(parsed as FsCommand, fsReply);
             return;
           }
           if (!isClientCommand(parsed)) {
@@ -136,6 +150,7 @@ export function serve(opts: ServeOptions): Promise<ServeHandle> {
       if (!handle) return;
       sockets.add(socket);
       const reply = (f: ClientFrame) => handle.send({ kind: 'text', text: JSON.stringify(f) });
+      const fsReply = (f: FsFrame) => handle.send({ kind: 'text', text: JSON.stringify(f) });
       senders.add(reply);
       reply({ t: 'hello', sessionId: null, version: PROTOCOL_VERSION });
     });

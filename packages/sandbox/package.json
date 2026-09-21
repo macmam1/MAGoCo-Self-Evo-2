@@ -1,0 +1,20 @@
+{
+  "name": "@magoco/sandbox",
+  "version": "0.0.1",
+  "description": "MAGoCo code execution, filesystem, and terminal — magoco.fs/code/term capabilities",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --import tsx ./test/*.test.ts"
+  },
+  "dependencies": {
+    "@magoco/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "tsx": "^4.19.0",
+    "@types/node": "^22.7.0"
+  }
+}
