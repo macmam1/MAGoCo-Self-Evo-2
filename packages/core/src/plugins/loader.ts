@@ -54,6 +54,7 @@ export interface PluginHooks {
  */
 export class PluginLoader {
   private readonly loaded = new Map<string, { module: PluginModule; dir: string }>();
+  private readonly modules = new Map<string, { bust: number }>();
 
   constructor(
     private readonly registry: CapabilityRegistry,
@@ -65,7 +66,12 @@ export class PluginLoader {
    * Scan `dirs` for plugins and register all that are enabled.
    * `enabled === undefined` means "no profile restriction" — load everything.
    */
-  async loadAll(dirs: string[], enabled?: ReadonlySet<string>): Promise<void> {
+  async loadAll(
+    dirs: string[],
+    enabled?: ReadonlySet<string>,
+    /** Fresh-reload already-known plugins instead of using the ESM cache. */
+    bust = false,
+  ): Promise<void> {
     for (const dir of dirs) {
       let entries: import('node:fs').Dirent[];
       try {
@@ -77,12 +83,12 @@ export class PluginLoader {
         if (!entry.isDirectory()) continue;
         const pluginDir = path.join(dir, entry.name);
         if (enabled && !enabled.has(entry.name)) continue;
-        await this.loadOne(entry.name, pluginDir);
+        await this.loadOne(entry.name, pluginDir, bust);
       }
     }
   }
 
-  private async loadOne(name: string, pluginDir: string): Promise<void> {
+  private async loadOne(name: string, pluginDir: string, bust = false): Promise<void> {
     try {
       const manifestPath = ['plugin.yaml', 'plugin.json'].map((f) => path.join(pluginDir, f));
       const manifestFile = manifestPath.find((p) => fs.existsSync(p));
@@ -104,7 +110,9 @@ export class PluginLoader {
       }
       // Plugins export their register/teardown either as the default export
       // or as named exports on the module namespace.
-      const raw = (await import(pathToFileUrl(entry))) as {
+      const seen = this.modules.get(path.resolve(entry));
+      const version = bust ? (seen?.bust ?? 0) + 1 : (seen?.bust ?? 0);
+      const raw = (await import(pathToFileUrl(entry, version))) as {
         register?: PluginModule['register'];
         teardown?: PluginModule['teardown'];
         default?: PluginModule;
@@ -119,6 +127,7 @@ export class PluginLoader {
         emit: this.hooks.emit,
       });
       this.loaded.set(name, { module: mod, dir: pluginDir });
+      this.modules.set(path.resolve(entry), { bust: version + 1 });
       this.logger.warn('plugin loaded', { name, provides: manifest.provides });
     } catch (err) {
       // A broken plugin must never kill the core.
@@ -213,9 +222,16 @@ export function parseSimpleYaml(raw: string): Record<string, unknown> {
         (parent.target as Record<string, unknown>)[line.key!] = coerceScalar(line.value);
         continue;
       }
-      // Empty value → a list or a nested map follows; peek at the next line to decide.
+      // Empty value. Three cases: a list follows, a nested map follows, or
+      // nothing follows (an *empty* list). Only the last must not become an
+      // empty object — an empty `provides:` is a valid manifest.
       const next = lines[i + 1];
-      const asList = !!next && next.indent > line.indent && next.item !== undefined;
+      const hasNext = !!next && next.indent > line.indent;
+      const asList = hasNext && next.item !== undefined;
+      if (!hasNext) {
+        (parent.target as Record<string, unknown>)[line.key!] = [];
+        continue;
+      }
       const container = asList ? [] : {};
       (parent.target as Record<string, unknown>)[line.key!] = container;
       stack.push({ indent: line.indent, target: container });
@@ -233,12 +249,22 @@ function readConfig(dir: string): Record<string, unknown> {
   }
 }
 
-function pathToFileUrl(p: string): string {
-  return 'file://' + path.resolve(p).replace(/\\/g, '/');
+function pathToFileUrl(p: string, cacheBust?: number): string {
+  const url = 'file://' + path.resolve(p).replace(/\\/g, '/');
+  // ESM caches by URL. A unique query makes a reload of a rewritten plugin
+  // actually pick up the new code instead of the stale module — without it,
+  // `unload` + `loadAll` silently runs the old file forever.
+  return cacheBust === undefined ? url : `${url}?v=${cacheBust}`;
 }
 
 /** YAML scalars → JS: booleans, null, and ints are typed; the rest stay strings. */
 function coerceScalar(raw: string): unknown {
+  // An inline flow list, e.g. `provides: []` — valid YAML, must be an array.
+  if (raw.startsWith('[') && raw.endsWith(']')) {
+    const inner = raw.slice(1, -1).trim();
+    if (inner === '') return [];
+    return inner.split(',').map((p) => p.trim());
+  }
   if (raw === 'true') return true;
   if (raw === 'false') return false;
   if (raw === 'null' || raw === '~') return null;
