@@ -6,16 +6,21 @@
  * cannot parse rather than continuing on a desynchronised stream.
  */
 
-/** A server event, as decoded from the wire. */
+/** A server event, as decoded from the wire. Mirrors packages/web/src/protocol.ts. */
 export type ServerEvent =
+  | { t: 'hello'; sessionId: string | null; version: number }
+  | { t: 'session_created'; sessionId: string; title: string; modelId: string }
   | { t: 'session_message'; sessionId: string; role: 'user' | 'assistant'; text: string }
-  | { t: 'session_thinking'; sessionId: string; text: string }
-  | { t: 'session_token'; sessionId: string; seq: number; text: string }
-  | { t: 'session_tool'; sessionId: string; name: string; status: string; summary: string }
-  | { t: 'session_done'; sessionId: string; ms: number; usage?: { inTokens?: number; outTokens?: number } }
+  | { t: 'session_thinking'; sessionId: string; seq: number; delta: string }
+  | { t: 'session_token'; sessionId: string; seq: number; delta: string }
+  | { t: 'session_tool_call'; sessionId: string; call: { id: string; capability: string; args: string } }
+  | { t: 'session_tool_done'; sessionId: string; outcome: { id: string; status: 'ok' | 'error'; result: string; ms: number } }
+  | { t: 'session_done'; sessionId: string; stopReason: string; ms: number; usage?: { inTokens?: number; outTokens?: number } }
   | { t: 'session_failed'; sessionId: string; error: string }
   | { t: 'session_model'; sessionId: string; modelId: string }
-  | { t: 'sessions'; sessions: Array<{ id: string; title: string; updatedAt: number }> }
+  | { t: 'session_export'; sessionId: string; format: 'json' | 'md'; body: string }
+  | { t: 'session_list'; sessions: Array<{ sessionId: string; title: string; modelId: string; updatedAt: number }> }
+  | { t: 'model_list'; models: Array<{ id: string; label: string; tier: string }> }
   | { t: 'error'; message: string };
 
 export interface ChatClient {
@@ -26,6 +31,7 @@ export interface ChatClient {
   setModel(modelId: string): void;
   listSessions(): void;
   exportSession(format: 'markdown' | 'json'): void;
+  createSession(): void;
 }
 
 export interface ClientCallbacks {
@@ -96,16 +102,19 @@ export function createChatClient(url: string, cb: ClientCallbacks): ChatClient {
     },
 
     send(text: string): void {
-      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ t: 'send', text }));
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ c: 'send', text }));
     },
     setModel(modelId: string): void {
-      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ t: 'set_model', modelId }));
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ c: 'model_set', modelId }));
     },
     listSessions(): void {
-      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ t: 'list_sessions' }));
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ c: 'list' }));
     },
     exportSession(format): void {
-      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ t: 'export', format }));
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ c: 'export', format }));
+    },
+    createSession(): void {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ c: 'create' }));
     },
   };
 }

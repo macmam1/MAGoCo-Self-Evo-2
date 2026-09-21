@@ -8,9 +8,23 @@
 export type RunPhase = 'idle' | 'running';
 
 export interface ToolCall {
+  readonly id: string;
   readonly name: string;
   readonly status: string;
   readonly summary: string;
+}
+
+export interface SessionSummary {
+  readonly sessionId: string;
+  readonly title: string;
+  readonly modelId: string;
+  readonly updatedAt: number;
+}
+
+export interface ModelView {
+  readonly id: string;
+  readonly label: string;
+  readonly tier: string;
 }
 
 export interface Message {
@@ -31,6 +45,8 @@ export interface UiState {
   readonly thinking: string;
   readonly error: string | null;
   readonly connected: boolean;
+  readonly sessions: ReadonlyArray<SessionSummary>;
+  readonly models: ReadonlyArray<ModelView>;
 }
 
 export const initial: UiState = {
@@ -41,6 +57,8 @@ export const initial: UiState = {
   thinking: '',
   error: null,
   connected: false,
+  sessions: [],
+  models: [],
 };
 
 /**
@@ -76,6 +94,15 @@ export function reduce(state: UiState, event: UiEvent): UiState {
         lastSeq: -1,
       };
 
+    case 'assistant_message':
+      return {
+        ...state,
+        phase: 'running',
+        error: null,
+        messages: [...state.messages, { role: 'assistant', text: event.text, streaming: true }],
+        lastSeq: -1,
+      };
+
     case 'token': {
       // Guarantee 2. Anything out of order is a protocol violation, not a
       // rendering artifact.
@@ -94,6 +121,15 @@ export function reduce(state: UiState, event: UiEvent): UiState {
 
     case 'tool':
       return addTool(state, event);
+
+    case 'tool_result':
+      return updateTool(state, event);
+
+    case 'session_list':
+      return { ...state, sessions: event.sessions };
+
+    case 'model_list':
+      return { ...state, models: event.models };
 
     case 'done': {
       const msgs = state.messages.slice();
@@ -122,7 +158,23 @@ function addTool(state: UiState, event: UiEvent & { t: 'tool' }): UiState {
   const msgs = state.messages.slice();
   const last = msgs[msgs.length - 1];
   if (!last || last.role !== 'assistant') return state;
-  const tools = [...(last.tools ?? []), { name: event.name, status: event.status, summary: event.summary }];
+  const tools = [...(last.tools ?? []), {
+    id: event.id,
+    name: event.name,
+    status: event.status,
+    summary: event.summary,
+  }];
+  msgs[msgs.length - 1] = { ...last, tools };
+  return { ...state, messages: msgs };
+}
+
+function updateTool(state: UiState, event: UiEvent & { t: 'tool_result' }): UiState {
+  const msgs = state.messages.slice();
+  const last = msgs[msgs.length - 1];
+  if (!last || last.role !== 'assistant') return state;
+  const tools = (last.tools ?? []).map((tc) =>
+    tc.id === event.id ? { ...tc, status: event.status === 'ok' ? 'done' : 'error', summary: event.summary } : tc,
+  );
   msgs[msgs.length - 1] = { ...last, tools };
   return { ...state, messages: msgs };
 }
@@ -133,9 +185,13 @@ export type UiEvent =
   | { t: 'model'; modelId: string }
   | { t: 'user_sent'; text: string }
   | { t: 'run_started' }
+  | { t: 'assistant_message'; text: string }
   | { t: 'token'; seq: number; text: string }
   | { t: 'thinking'; text: string }
-  | { t: 'tool'; name: string; status: string; summary: string }
+  | { t: 'tool'; id: string; name: string; status: string; summary: string }
+  | { t: 'tool_result'; id: string; status: 'ok' | 'error'; summary: string }
+  | { t: 'session_list'; sessions: ReadonlyArray<SessionSummary> }
+  | { t: 'model_list'; models: ReadonlyArray<ModelView> }
   | { t: 'done' }
   | { t: 'failed'; error: string }
   | { t: 'clear_error' };

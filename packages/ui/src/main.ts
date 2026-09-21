@@ -39,17 +39,34 @@ function nearBottom(): boolean {
 /** Translate a wire event into a state event. */
 function onEvent(e: ServerEvent): void {
   switch (e.t) {
+    case 'hello':
+      break;
     case 'session_message':
-      dispatch(e.role === 'user' ? { t: 'user_sent', text: e.text } : { t: 'run_started' });
+      if (e.role === 'user') dispatch({ t: 'user_sent', text: e.text });
+      else dispatch({ t: 'assistant_message', text: e.text });
       break;
     case 'session_token':
-      dispatch({ t: 'token', seq: e.seq, text: e.text });
+      dispatch({ t: 'token', seq: e.seq, text: e.delta });
       break;
     case 'session_thinking':
-      dispatch({ t: 'thinking', text: e.text });
+      dispatch({ t: 'thinking', text: e.delta });
       break;
-    case 'session_tool':
-      dispatch({ t: 'tool', name: e.name, status: e.status, summary: e.summary });
+    case 'session_tool_call':
+      dispatch({
+        t: 'tool',
+        id: e.call.id,
+        name: e.call.capability,
+        status: 'running',
+        summary: e.call.args,
+      });
+      break;
+    case 'session_tool_done':
+      dispatch({
+        t: 'tool_result',
+        id: e.outcome.id,
+        status: e.outcome.status,
+        summary: e.outcome.result,
+      });
       break;
     case 'session_done':
       dispatch({ t: 'done' });
@@ -60,9 +77,18 @@ function onEvent(e: ServerEvent): void {
     case 'session_model':
       dispatch({ t: 'model', modelId: e.modelId });
       break;
-    case 'sessions':
-      // session list sidebar arrives in a later iteration; the palette is
-      // enough for Phase 2.
+    case 'session_created':
+      dispatch({ t: 'model', modelId: e.modelId });
+      dispatch({ t: 'run_started' });
+      break;
+    case 'session_export':
+      downloadExport(e.format, e.body);
+      break;
+    case 'session_list':
+      dispatch({ t: 'session_list', sessions: e.sessions });
+      break;
+    case 'model_list':
+      dispatch({ t: 'model_list', models: e.models });
       break;
     case 'error':
       dispatch({ t: 'failed', error: e.message });
@@ -122,6 +148,20 @@ ROOT!.addEventListener('input', (ev) => {
   }
 });
 
+function downloadExport(format: 'json' | 'md', body: string): void {
+  const ext = format === 'json' ? 'json' : 'md';
+  const mime = format === 'json' ? 'application/json' : 'text/markdown';
+  const blob = new Blob([body], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `magoco-export.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function toggleTheme(): void {
   const html = document.documentElement;
   const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -144,7 +184,7 @@ document.documentElement.dir = isRtl(locale) ? 'rtl' : 'ltr';
 document.documentElement.lang = locale;
 
 void client.connect().then(() => {
-  client.listSessions();
+  client.createSession();
 }, (err) => {
   dispatch({ t: 'failed', error: err.message });
 });

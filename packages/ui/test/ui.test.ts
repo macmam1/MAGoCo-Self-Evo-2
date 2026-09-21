@@ -58,9 +58,14 @@ test('T-E2b: failed returns to idle with an error', () => {
 test('T-E2c: tool calls attach to the streaming assistant message', () => {
   let s: UiState = initial;
   s = reduce(s, { t: 'run_started' });
-  s = reduce(s, { t: 'tool', name: 'shell', status: 'ok', summary: 'exit 0' });
+  s = reduce(s, { t: 'tool', id: 'tc1', name: 'shell', status: 'running', summary: 'exit 0' });
   assert.equal(s.messages.at(-1)?.tools?.length, 1);
   assert.equal(s.messages.at(-1)?.tools?.[0].name, 'shell');
+  assert.equal(s.messages.at(-1)?.tools?.[0].status, 'running');
+
+  // tool_result resolves the same call id by matching id
+  s = reduce(s, { t: 'tool_result', id: 'tc1', status: 'ok', summary: 'exit 0' });
+  assert.equal(s.messages.at(-1)?.tools?.[0].status, 'done');
 });
 
 test('T-E3: markdown never emits a raw tag from model text', () => {
