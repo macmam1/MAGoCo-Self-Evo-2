@@ -10,7 +10,6 @@
     "test": "node --test --import tsx ./test/**/*.test.ts"
   },
   "dependencies": {
-    "@magoco/web": "workspace:*",
     "@magoco/agents": "workspace:*"
   },
   "devDependencies": {

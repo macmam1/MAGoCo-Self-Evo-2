@@ -183,9 +183,6 @@ importers:
       '@magoco/agents':
         specifier: workspace:*
         version: link:../agents
-      '@magoco/web':
-        specifier: workspace:*
-        version: link:../web
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -222,7 +219,7 @@ importers:
         version: 0.28.2
     devDependencies:
       '@types/node':
-        specifier: ^22.0.0
+        specifier: ^22.7.0
         version: 22.20.4
       tsx:
         specifier: ^4.19.0

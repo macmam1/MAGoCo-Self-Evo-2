@@ -1,4 +1,5 @@
 import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CapabilityRegistry } from './capabilities/registry.js';
@@ -10,9 +11,39 @@ import { PluginLoader } from './plugins/loader.js';
 import { ProfileLoader } from './profiles/loader.js';
 import type { ResolvedProfile } from './profiles/loader.js';
 
+/**
+ * Locate every `plugin/` directory next to core's own package root.
+ *
+ * A builtin is just a package that ships a `plugin/` dir; the CLI (the only
+ * place that knows where the workspace root is) may pass its own list via
+ * `builtinPluginDirs`. Missing dirs are skipped by the loader, so this is
+ * safe to call when only some packages ship plugins.
+ */
+function defaultBuiltinPluginDirs(): string[] {
+  // runtime.ts lives at packages/core/src/runtime.ts → two dirnames up is
+  // the *core package*, and one more is packages/. A builtin is any package
+  // that ships a `plugin/` dir, so we scan siblings, not the repo root.
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const pkgsRoot = path.dirname(path.dirname(here));
+  const found: string[] = [];
+  for (const name of ['web', 'agents', 'ui', 'workflows']) {
+    const dir = path.join(pkgsRoot, name, 'plugin');
+    if (fs.existsSync(dir)) found.push(dir);
+  }
+  return found;
+}
+
 export interface RuntimeOptions {
   /** Root data dir (sessions, plugins, profiles all live under here). */
   readonly rootDir: string;
+  /**
+   * Directories scanned for framework-shipped plugins. Defaults to the
+   * `plugin/` directory of every workspace package. Core deliberately has
+   * *no* builtin plugin list of its own: a builtin is a package that ships a
+   * `plugin/` dir, so adding or removing one is a package change, not an edit
+   * to the core runtime.
+   */
+  readonly builtinPluginDirs?: ReadonlyArray<string>;
   /** Profile name to boot with. */
   readonly profile: string;
   /** Extra plugin dirs beyond the built-in one. */
@@ -63,13 +94,12 @@ export class Runtime {
 
     const dirs = [
       path.join(opts.rootDir, 'plugins'),
-      // Built-in plugins ship with the framework. They are first-class — a
-      // profile enables them with `plugins: web: true`, exactly like any other.
-      //
-      // import.meta.url resolves to the file itself; `dirname` twice reaches
-      // the package root so the builtin dir is found from src/, dist/ or a
-      // tsx-run source alike.
-      path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'src', 'plugins', 'builtin'),
+      // Built-in plugins ship inside a workspace package's `plugin/` dir and
+      // are discovered exactly like any third-party plugin — the only
+      // difference is where they sit on disk. Core has no builtin list: a
+      // package that ships a `plugin/` dir is a builtin, and `plugin/` never
+      // imports core-only internals, so no layer is crossed at compile time.
+      ...(opts.builtinPluginDirs ?? defaultBuiltinPluginDirs()),
       ...(opts.extraPluginDirs ?? []),
     ];
     // No `plugins:` key in the profile → every discovered plugin is enabled by

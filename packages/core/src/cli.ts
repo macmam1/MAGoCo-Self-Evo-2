@@ -106,9 +106,13 @@ async function main(): Promise<void> {
   if (args.serve) {
     // The interactive surface: boot the runtime, start the web server, stay
     // up until Ctrl-C. Headless automation stays on `--exec`.
-    const provider = rt.registry.resolve<{ start(): Promise<{ close(): Promise<void> }> }>(
-      'magoco.web.serve',
-    );
+    //
+    // The handle is the capability contract's WebServeInstance. Its stop
+    // method is `stop()`, and it is idempotent — safe to call twice if a
+    // SIGINT and a SIGTERM land close together.
+    const provider = rt.registry.resolve<{
+      start(): Promise<{ stop(): Promise<void> }>;
+    }>('magoco.web.serve');
     if (typeof provider?.start !== 'function') {
       process.stderr.write('fatal: magoco.web.serve is not provided; is the web plugin enabled?\n');
       await rt.shutdown();
@@ -116,10 +120,16 @@ async function main(): Promise<void> {
     }
     const handle = await provider.start();
     process.stdout.write(`web server listening on 127.0.0.1 (handle acquired)\n`);
+    let stopping = false;
     const stop = async () => {
-      await handle.close();
-      await rt.shutdown();
-      process.exit(0);
+      if (stopping) return;
+      stopping = true;
+      try {
+        await handle.stop();
+      } finally {
+        await rt.shutdown();
+        process.exit(0);
+      }
     };
     process.on('SIGINT', () => void stop());
     process.on('SIGTERM', () => void stop());
