@@ -47,6 +47,7 @@ export interface UiState {
   readonly connected: boolean;
   readonly sessions: ReadonlyArray<SessionSummary>;
   readonly models: ReadonlyArray<ModelView>;
+  readonly paletteOpen: boolean;
 }
 
 export const initial: UiState = {
@@ -59,6 +60,7 @@ export const initial: UiState = {
   connected: false,
   sessions: [],
   models: [],
+  paletteOpen: false,
 };
 
 /**
@@ -149,6 +151,12 @@ export function reduce(state: UiState, event: UiEvent): UiState {
     case 'clear_error':
       return { ...state, error: null };
 
+    case 'toggle_palette':
+      return { ...state, paletteOpen: !state.paletteOpen };
+
+    case 'close_palette':
+      return { ...state, paletteOpen: false };
+
     default:
       return state;
   }
@@ -194,4 +202,6 @@ export type UiEvent =
   | { t: 'model_list'; models: ReadonlyArray<ModelView> }
   | { t: 'done' }
   | { t: 'failed'; error: string }
-  | { t: 'clear_error' };
+  | { t: 'clear_error' }
+  | { t: 'toggle_palette' }
+  | { t: 'close_palette' };

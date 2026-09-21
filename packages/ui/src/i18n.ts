@@ -29,6 +29,13 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     'thinking.show': 'Show reasoning',
     'thinking.hide': 'Hide reasoning',
     'theme.toggle': 'Toggle theme',
+    'palette.trigger': 'Command palette (Cmd+K)',
+    'palette.placeholder': 'Search actions…',
+    'palette.new_chat': 'New chat',
+    'palette.export_md': 'Export markdown',
+    'palette.export_json': 'Export JSON',
+    'palette.lang_fa': 'فارسی',
+    'palette.lang_en': 'English',
   },
   fa: {
     'app.title': 'MAGoCo',
@@ -51,6 +58,13 @@ const STRINGS: Record<Locale, Record<string, string>> = {
     'thinking.show': 'نمایش استدلال',
     'thinking.hide': 'پنهان کردن استدلال',
     'theme.toggle': 'تغییر پوسته',
+    'palette.trigger': 'پالت دستورات (Cmd+K)',
+    'palette.placeholder': 'جستجوی دستورات…',
+    'palette.new_chat': 'گفتگوی جدید',
+    'palette.export_md': 'خروجی مارک‌داون',
+    'palette.export_json': 'خروجی JSON',
+    'palette.lang_fa': 'فارسی',
+    'palette.lang_en': 'English',
   },
 };
 

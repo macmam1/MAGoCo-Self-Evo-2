@@ -127,9 +127,36 @@ ROOT!.addEventListener('click', (ev) => {
   if (target.id === 'export-md-btn') return client.exportSession('markdown');
   if (target.id === 'export-json-btn') return client.exportSession('json');
   if (target.id === 'theme-btn') return toggleTheme();
+  if (target.id === 'palette-btn') return dispatch({ t: 'toggle_palette' });
+  if (target.id === 'palette-overlay') return dispatch({ t: 'close_palette' });
+  if (target.id === 'lang-btn') return toggleLanguage();
+
+  if (target.classList.contains('palette-action')) {
+    const act = target.dataset.action;
+    dispatch({ t: 'close_palette' });
+    if (act === 'new') return client.createSession();
+    if (act === 'export-md') return client.exportSession('markdown');
+    if (act === 'export-json') return client.exportSession('json');
+  }
 });
 
 ROOT!.addEventListener('keydown', (ev) => {
+  // Cmd+K or Ctrl+K to toggle command palette
+  if ((ev.metaKey || ev.ctrlKey) && ev.key === 'k') {
+    ev.preventDefault();
+    dispatch({ t: 'toggle_palette' });
+    setTimeout(() => {
+      ROOT!.querySelector<HTMLInputElement>('#palette-input')?.focus();
+    }, 50);
+    return;
+  }
+  // Esc to close palette
+  if (ev.key === 'Escape' && state.paletteOpen) {
+    ev.preventDefault();
+    dispatch({ t: 'close_palette' });
+    return;
+  }
+
   if (ev.key !== 'Enter' || ev.shiftKey || ev.isComposing) return;
   const target = ev.target as HTMLElement;
   if (target.id === 'input') {
@@ -171,6 +198,15 @@ function toggleTheme(): void {
   } catch {
     // storage read-only — cosmetic only
   }
+}
+
+function toggleLanguage(): void {
+  const next = locale === 'fa' ? 'en' : 'fa';
+  locale = next;
+  setLocale(next);
+  document.documentElement.dir = isRtl(next) ? 'rtl' : 'ltr';
+  document.documentElement.lang = next;
+  paint();
 }
 
 // Restore theme and direction before first paint.

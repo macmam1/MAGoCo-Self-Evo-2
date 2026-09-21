@@ -30,6 +30,7 @@ export function render(props: ViewProps): string {
     ${state.messages.length === 0 ? emptyState(props) : state.messages.map((m) => message(m, props)).join('')}
     ${state.thinking && showThinking ? thinkingBlock(state.thinking) : ''}
   </main>
+  ${state.paletteOpen ? paletteOverlay(props) : ''}
   ${composer(props)}
 </div>`;
 }
@@ -40,6 +41,7 @@ function header(props: ViewProps): string {
     ? t('status.connected', locale)
     : t('status.disconnected', locale);
   const dot = state.connected ? 'var(--good)' : 'var(--bad)';
+  const langLabel = locale === 'en' ? 'فا' : 'EN';
   return `<header class="header">
   <div class="brand">
     <strong>${t('app.title', locale)}</strong>
@@ -48,7 +50,9 @@ function header(props: ViewProps): string {
   <div class="header-right">
     ${state.modelId ? `<span class="model">${t('status.model', locale)}: <code>${esc(state.modelId)}</code></span>` : ''}
     <span class="status"><span class="dot" style="background:${dot}"></span>${esc(status)}</span>
+    <button class="ghost" id="lang-btn" title="${locale === 'en' ? t('palette.lang_fa', locale) : t('palette.lang_en', locale)}">${langLabel}</button>
     <button class="ghost" id="theme-btn" title="${t('theme.toggle', locale)}">◐</button>
+    <button class="ghost" id="palette-btn" title="${t('palette.trigger', locale)}">⌘</button>
   </div>
 </header>`;
 }
@@ -112,4 +116,18 @@ function composer(props: ViewProps): string {
     ${btn}
   </div>
 </footer>`;
+}
+
+function paletteOverlay(props: ViewProps): string {
+  const { locale } = props;
+  return `<div class="palette-overlay" id="palette-overlay">
+  <div class="palette">
+    <input type="text" id="palette-input" placeholder="${t('palette.placeholder', locale)}" autocomplete="off" />
+    <div class="palette-actions">
+      <button class="palette-action" data-action="new">${t('palette.new_chat', locale)}</button>
+      <button class="palette-action" data-action="export-md">${t('palette.export_md', locale)}</button>
+      <button class="palette-action" data-action="export-json">${t('palette.export_json', locale)}</button>
+    </div>
+  </div>
+</div>`;
 }

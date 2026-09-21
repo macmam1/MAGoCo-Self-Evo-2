@@ -158,3 +158,59 @@
 [dir='rtl'] .messages, [dir='rtl'] .composer { text-align: right; }
 [dir='rtl'] .msg-body ul { padding-left: 0; padding-right: 22px; }
 [dir='rtl'] .thinking-body { border-left: none; border-right: 2px solid var(--accent); border-radius: 8px 0 0 8px; }
+
+/* Command Palette Overlay */
+.palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+.palette {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#palette-input {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+}
+.palette-actions {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 4px;
+}
+.palette-action {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.palette-action:hover {
+  background: var(--border);
+}
+[dir='rtl'] .palette-action { text-align: right; }
+
