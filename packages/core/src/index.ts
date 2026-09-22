@@ -54,6 +54,7 @@ export { HUMAN_ASSIST_CAPABILITY, humanDef, type HumanProvider } from './capabil
 export { EXPERIENCE_CAPABILITY, experienceDef, type ExperienceProvider } from './capabilities/experience.js';
 export { SKILL_CAPTURE_CAPABILITY, skillCaptureDef, type SkillProvider } from './capabilities/skill-capture.js';
 export { FIXER_CAPABILITY, fixerDef, type FixerProvider } from './capabilities/fixer.js';
+export { MCP_CAPABILITY, mcpDef, type MCPClient } from './capabilities/mcp.js';
 export type {
   EditFile,
   EditRequest,
