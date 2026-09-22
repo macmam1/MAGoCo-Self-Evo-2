@@ -386,7 +386,7 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #51 | merged | 2026-09-22 | Mouse tracking + Viewport sync |
 | #52 | merged | 2026-09-22 | Human Assist (HITL) |
 | #53 | merged | 2026-09-22 | Skill Capture (learn from successful user interactions) |
-| #54 | in_progress | 2026-09-22 | Proxy/Identity Masking |
+| #54 | merged | 2026-09-22 | Proxy/Identity Masking |
 | #55 | merged | 2026-09-22 | Experience Engine (capture → embed → retrieve → inject) |
 | #56 | merged | 2026-09-22 | Fixer Agent (Self-Healing & Selector Recovery) |
 | #57 | merged | 2026-09-22 | MCP Client (Complete) |
