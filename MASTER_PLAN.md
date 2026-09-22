@@ -394,6 +394,9 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #42 | merged | 2026-09-22 | AI code generation/review/debug (Phase 3.5) |
 | #59 | merged | 2026-09-22 | Collaborative Browsing (Live Playwright) |
 | #41 | merged | 2026-09-22 | Live Preview (Phase 3.6) |
+| #60 | merged | 2026-09-22 | Rollback Manager (Auto-Snapshot & Restore) |
+
+### Phase 8 PRs
 
 **جزییات PR #39 (در دست ساخت):**
 
@@ -477,4 +480,5 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 - Phase 5 (Workflow): ✅ ۱۰۰٪ کامل — DAG engine, triggers, runner, builder, serializer, sub-workflow (289 tests)
 - Phase 6 (Auto-generation): ✅ ۱۰۰٪ کامل — pipeline, team, milestone, SOP (336 tests)
 - Phase 7 (RAG/Knowledge): ✅ ۱۰۰٪ کامل — chunker, vector-store, pipeline, KB, hybrid search (396/396 tests)
-- مرحله بعد: Phase 8 — خودتکامل (reflection, pattern mining, prompt optimization)
+- **Phase 8 (خودتکامل):** ✅ ۱۰۰٪ کامل — rollback, experience engine, skill capture, auto-skill-gen, self-healing (432/432 tests)
+- مرحله بعد: Phase 9 — ادغام‌ها و MCP
