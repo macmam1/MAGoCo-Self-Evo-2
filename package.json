@@ -12,7 +12,8 @@
     "lint": "pnpm -r lint",
     "docker": "docker build -t magoco .",
     "dockerup": "docker compose up -d",
-    "dockerdown": "docker compose down"
+    "dockerdown": "docker compose down",
+    "start": "node packages/web/server.js"
   },
   "engines": {
     "node": ">=20"
