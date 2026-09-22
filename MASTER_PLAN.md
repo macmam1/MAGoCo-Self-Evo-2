@@ -474,5 +474,6 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 - Phase 3: ✅ ۱۰۰٪ کامل
 - Phase 3.7: ✅ ۱۰۰٪ کامل
 - Phase 4: ✅ ۱۰۰٪ کامل
-- Phase 5 (Workflow): ✅ ۱۰۰٪ کامل — DAG engine, triggers, runner, builder, serializer, sub-workflow (289/289 tests)
-- مرحله بعد: Phase 6 — تولید خودکار و تیم‌سازی
+- Phase 5 (Workflow): ✅ ۱۰۰٪ کامل — DAG engine, triggers, runner, builder, serializer, sub-workflow (289 tests)
+- Phase 6 (Auto-generation): ✅ ۱۰۰٪ کامل — pipeline, team, milestone, SOP (336/336 tests)
+- مرحله بعد: Phase 7 — دانش (RAG + vector DB)
