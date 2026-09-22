@@ -9,7 +9,10 @@
     "build": "pnpm -r build",
     "test": "bash scripts/test-core.sh",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "docker": "docker build -t magoco .",
+    "dockerup": "docker compose up -d",
+    "dockerdown": "docker compose down"
   },
   "engines": {
     "node": ">=20"
