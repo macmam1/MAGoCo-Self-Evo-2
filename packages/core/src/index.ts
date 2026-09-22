@@ -57,6 +57,7 @@ export { FIXER_CAPABILITY, fixerDef, type FixerProvider } from './capabilities/f
 export { MCP_CAPABILITY, mcpDef, type MCPClient } from './capabilities/mcp.js';
 export { GITHUB_CAPABILITY, githubDef, type GitHubProvider } from './capabilities/github.js';
 export { PROXY_CAPABILITY, proxyDef, type ProxyProvider } from './capabilities/proxy.js';
+export { PREVIEW_CAPABILITY, previewDef, type PreviewProvider } from './capabilities/preview.js';
 export type {
   EditFile,
   EditRequest,
