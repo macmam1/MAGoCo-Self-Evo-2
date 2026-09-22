@@ -1,141 +1,155 @@
-# MAGoCo-Self-Evo-2 API Documentation
+# MAGoCo API Reference
 
-## Endpoints
+Base URL: `http://127.0.0.1:9119`
 
-### GET /health
+---
 
-Returns application health status.
+## Health
 
-**Response:**
+### GET /api/health
+
+Liveness and readiness probe.
+
+**Response 200**
 ```json
 {
   "status": "healthy",
-  "uptime": 3600,
-  "version": "0.0.1",
-  "timestamp": 1727000000000
+  "uptime": 142,
+  "version": "0.1.0",
+  "timestamp": 1727013346000
 }
 ```
 
-### POST /create
-
-Create a new agent session.
-
-**Request:**
-```json
-{
-  "title": "New Session",
-  "modelId": "model-name"
-}
-```
-
-**Response:**
-```json
-{
-  "t": "session_created",
-  "sessionId": "uuid",
-  "title": "New Session"
-}
-```
-
-### POST /send
-
-Send command to session.
-
-**Request:**
-```json
-{
-  "sessionId": "uuid",
-  "command": "edit",
-  "args": [...]
-}
-```
-
-**Response:**
-```json
-{
-  "t": "success",
-  "result": {...}
-}
-```
-
-### WebSocket /terminal
-
-Interactive terminal connection.
-
-**Protocol:**
-- Connect via WebSocket
-- Send commands as JSON
-- Receive output stream
-
-### POST /preview
-
-Start preview server.
-
-**Request:**
-```json
-{
-  "sessionId": "uuid",
-  "path": "./app"
-}
-```
-
-**Response:**
-```json
-{
-  "url": "http://localhost:3000"
-}
-```
+| Field | Type | Description |
+|---|---|---|
+| status | `"healthy" \| "degraded" \| "unhealthy"` | Current health state |
+| uptime | number | Seconds since process start |
+| version | string | Application version |
+| timestamp | number | Unix ms |
 
 ---
 
-## Capabilities
+## Code Execution
 
-### magoco.fs
+### POST /api/run
 
-File system operations.
+Run a code snippet in the sandbox and return its output.
 
-- `fs.read`: Read file
-- `fs.write`: Write file
-- `fs.list`: List directory
+**Request**
+```json
+{
+  "source": "print('hello')",
+  "language": "py"
+}
+```
 
-### magoco.code.run
+| Field | Type | Values |
+|---|---|---|
+| source | string | Source code to run |
+| language | string | `"js"` or `"py"` |
 
-Execute code.
+**Response 200**
+```json
+{
+  "code": 0,
+  "stdout": "hello\n",
+  "stderr": ""
+}
+```
 
-- `run.js`: Run JavaScript
-- `run.py`: Run Python
-- `run.sh`: Run Shell
-
-### magoco.edit
-
-Multi-file editing.
-
-### magoco.ai.code
-
-AI code generation and review.
-
-### magoco.browser
-
-Browser automation.
-
-- `browser.navigate`: Navigate to URL
-- `browser.screenshot`: Take screenshot
-
-### magoco.preview
-
-Live preview server.
-
-### magoco.health
-
-Health monitoring.
+**Response 400** — invalid request body or unsupported language.
 
 ---
 
-## Error Response
+## File Editing
 
+### POST /api/edit
+
+Atomically write one or more files.
+
+**Request**
 ```json
 {
-  "t": "error",
-  "message": "Error description"
+  "files": [
+    { "path": "src/foo.ts", "content": "export const x = 1;" }
+  ]
 }
 ```
+
+**Response 200**
+```json
+{
+  "results": [
+    { "path": "src/foo.ts", "success": true }
+  ]
+}
+```
+
+On per-file failure:
+```json
+{ "path": "src/foo.ts", "success": false, "error": "permission denied" }
+```
+
+**Response 400** — `files` is not an array.
+
+---
+
+## WebSocket Channels
+
+Connect to `ws://127.0.0.1:9119/ws` for the chat protocol.
+
+All frames are JSON. The server sends a `hello` frame immediately on connect:
+```json
+{ "t": "hello", "sessionId": null, "version": 1 }
+```
+
+### Client → Server commands
+
+| `type` | Payload | Description |
+|---|---|---|
+| `chat` | `{ message: string }` | Send a user message |
+| `cancel` | — | Cancel the current agent turn |
+
+### Server → Client frames
+
+| `t` | Payload | Description |
+|---|---|---|
+| `hello` | `{ sessionId, version }` | Sent once on connect |
+| `token` | `{ text: string }` | Streaming LLM token |
+| `tool_call` | `{ name, args }` | Agent invoking a tool |
+| `tool_result` | `{ name, result }` | Tool execution result |
+| `done` | `{ usage }` | Turn complete |
+| `error` | `{ message }` | Recoverable error |
+
+---
+
+## Filesystem WebSocket
+
+Connect to `ws://127.0.0.1:9119/fs` for file system operations.
+
+### Commands
+
+| `type` | Payload |
+|---|---|
+| `fs/read` | `{ path: string }` |
+| `fs/write` | `{ path: string, content: string }` |
+| `fs/list` | `{ path: string }` |
+| `fs/watch` | `{ path: string }` |
+
+### Frames
+
+| `type` | Payload |
+|---|---|
+| `fs/read/result` | `{ path, content }` |
+| `fs/write/result` | `{ path, success }` |
+| `fs/list/result` | `{ path, entries: FsEntry[] }` |
+| `fs/change` | `{ path, kind: "created"\|"modified"\|"deleted" }` |
+
+---
+
+## Terminal WebSocket
+
+Connect to `ws://127.0.0.1:9119/terminal` for a raw PTY session.
+
+- Server → Client: raw bytes (UTF-8 text chunks from the shell)
+- Client → Server: raw bytes (keystrokes forwarded to the PTY)

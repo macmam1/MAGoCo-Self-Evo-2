@@ -42,6 +42,8 @@ function isHumanCommand(x: unknown): x is HumanTask {
 export interface ServeOptions {
   /** Directory served at `/`. Defaults to ../ui/dist. */
   readonly staticDir: string;
+  /** Health provider — if supplied, GET /api/health returns its status. */
+  readonly healthProvider?: { getStatus(): { status: string; uptime: number; version: string; timestamp: number } };
   /** Re-read files from disk on every request when true (dev mode). */
   readonly noCache: boolean;
   /** Bind host. Hard-overridden to 127.0.0.1 — never 0.0.0.0. */
@@ -109,6 +111,15 @@ export function serve(opts: ServeOptions): Promise<ServeHandle> {
 
     const server = http.createServer((req, res) => {
       const urlPath = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+      // GET /api/health — liveness + readiness probe
+      if (req.method === 'GET' && urlPath === '/api/health') {
+        const body = opts.healthProvider
+          ? JSON.stringify(opts.healthProvider.getStatus())
+          : JSON.stringify({ status: 'healthy', uptime: 0, version: 'unknown', timestamp: Date.now() });
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(body);
+        return;
+      }
       // POST /api/run — code execution endpoint
       if (req.method === 'POST' && urlPath === '/api/run') {
         if (!opts.onRunCommand) {
