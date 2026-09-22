@@ -388,7 +388,7 @@ export function register(ctx: PluginRegisterContext): void {
           }
           // Inline fs handling
           if (cmd.t === 'fs_init') {
-            reply({ t: 'fs_ok' });
+            reply({ t: 'fs_ready', root: '/project' });
           } else {
             reply({ t: 'fs_error', code: 'E_UNAVAILABLE', message: 'fs handler not implemented' });
           }

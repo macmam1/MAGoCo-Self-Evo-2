@@ -115,6 +115,7 @@ export function serve(opts: ServeOptions): Promise<ServeHandle> {
           res.writeHead(501).end('not implemented');
           return;
         }
+        const onRunCommand = opts.onRunCommand;
         let body = '';
         req.on('data', (chunk) => { body += chunk; });
         req.on('end', () => {
@@ -124,7 +125,7 @@ export function serve(opts: ServeOptions): Promise<ServeHandle> {
               res.writeHead(400).end('invalid request');
               return;
             }
-            opts.onRunCommand(data, (resp) => {
+            onRunCommand(data, (resp) => {
               res.writeHead(200, { 'content-type': 'application/json' });
               res.end(JSON.stringify(resp));
             });

@@ -128,6 +128,7 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
     : null;
 
   return {
+    runId: crypto.randomUUID(),
     done: new Promise((resolve) => {
           child.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
               if (timer) clearTimeout(timer);
@@ -148,6 +149,7 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
       [Symbol.asyncIterator]() {
         let idx = 0;
         return {
+    runId: crypto.randomUUID(),
           async next() {
             if (idx < stdoutChunks.length) {
               const chunk = stdoutChunks[idx++];
@@ -172,6 +174,7 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
       [Symbol.asyncIterator]() {
         let idx = 0;
         return {
+    runId: crypto.randomUUID(),
           async next() {
             if (idx < stderrChunks.length) {
               const chunk = stderrChunks[idx++];
@@ -208,10 +211,12 @@ function failed(runId: string, msg: string): RunHandle {
     outputBytes: 0,
   });
   return {
+    runId: crypto.randomUUID(),
     done,
     stdout: {
       [Symbol.asyncIterator]() {
         return {
+    runId: crypto.randomUUID(),
           next() {
             return new Promise((resolve) => {
               setTimeout(() => resolve({ value: undefined, done: true }), 0);
@@ -223,6 +228,7 @@ function failed(runId: string, msg: string): RunHandle {
     stderr: {
       [Symbol.asyncIterator]() {
         return {
+    runId: crypto.randomUUID(),
           next() {
             return new Promise((resolve) => {
               setTimeout(() => resolve({ value: undefined, done: true }), 0);
