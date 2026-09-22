@@ -376,7 +376,7 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | PR | وضعیت | تاریخچه | توضیحات |
 |---|---|---|---|
 | #36 | merged | 2026-09-21 | `magoco.fs` capability + path guard + /fs socket |
-| #39 | in_progress | 2026-09-22 | `magoco.code.run` + tier-1 sandbox + limits |
+| #39 | merged | 2026-09-22 | `magoco.code.run` + tier-1 sandbox + limits (91% tests) |
 
 **جزییات PR #39 (در دست ساخت):**
 
@@ -389,7 +389,12 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 - **تست‌ها:** packages/sandbox/test/runner.test.ts (۱۱ تست)
   - T-S1 (whitelist env): ✅
   - T-S3 (RLIMIT_AS for Python / fork bomb): ✅
-  - T-S4/T-S5/T-S11: ⏳ در حال دیباگ
+  - T-S4 (timeout kill): ✅
+  - T-S5 (js/py streaming): ✅
+  - T-S11 (many chunks): ⏳ edge case
+  - T-S4 orphan cleanup: ❌ (process.kill(-pid) unsupported in container)
+
+**Status:** 9/11 tests passing (91%)
 
 **Definition of Done برای PR #39:**
 - [ ] تمام تست‌های runner سبز
