@@ -44,13 +44,14 @@ import {
   type LlmRequest,
   type LlmResponse,
 } from '@magoco/agents';
-import { FS_CAPABILITY, type FileSystemCapability, type RunHandle, EDIT_CAPABILITY, editDef, AI_CODE_CAPABILITY, aiCodeDef, type AIProvider, VIEWPORT_CAPABILITY, viewportDef, HUMAN_ASSIST_CAPABILITY, humanDef, type HumanProvider, EXPERIENCE_CAPABILITY, experienceDef, SKILL_CAPTURE_CAPABILITY, skillCaptureDef, FIXER_CAPABILITY, fixerDef, MCP_CAPABILITY, mcpDef, GITHUB_CAPABILITY, githubDef, PROXY_CAPABILITY, proxyDef } from '@magoco/core';
+import { FS_CAPABILITY, type FileSystemCapability, type RunHandle, EDIT_CAPABILITY, editDef, AI_CODE_CAPABILITY, aiCodeDef, type AIProvider, VIEWPORT_CAPABILITY, viewportDef, HUMAN_ASSIST_CAPABILITY, humanDef, type HumanProvider, EXPERIENCE_CAPABILITY, experienceDef, SKILL_CAPTURE_CAPABILITY, skillCaptureDef, FIXER_CAPABILITY, fixerDef, MCP_CAPABILITY, mcpDef, GITHUB_CAPABILITY, githubDef, PROXY_CAPABILITY, proxyDef, BROWSER_CAPABILITY, browserDef } from '@magoco/core';
 import { TERMINAL_CAPABILITY, termDef, type TermRequest } from '../../core/src/capabilities/terminal.js';
 import type { FsCommand, FsFrame } from '../../sandbox/src/fs-protocol.js';
 import { isFsCommand } from '../../sandbox/src/fs-protocol.js';
 import { createTermProvider } from '../../sandbox/src/terminal.js';
 import { createEditProvider } from '../../sandbox/src/edit.js';
 import { createAIProvider } from '../../sandbox/src/ai-code.js';
+import { createBrowserProvider } from '../../sandbox/src/browser.js';
 
 /** Read all chunks from a stream into a single string. */
 function streamToString(s: AsyncIterable<string>): Promise<string> {
@@ -85,6 +86,8 @@ export function register(ctx: PluginRegisterContext): void {
   ctx.registry.provide(TERMINAL_CAPABILITY, 'web', termProvider);
   const editProvider = createEditProvider();
   ctx.registry.provide(EDIT_CAPABILITY, 'sandbox', editProvider);
+  const browserProvider = createBrowserProvider();
+  ctx.registry.provide(BROWSER_CAPABILITY, 'sandbox', browserProvider);
   const aiProvider = createAIProvider({});
   ctx.registry.provide(AI_CODE_CAPABILITY, 'sandbox', aiProvider);
 
