@@ -33,3 +33,17 @@ export type {
   FsChangeEvent,
   FsError,
 } from './capabilities/fs.js';
+export {
+  CODE_CAPABILITY,
+  codeDef,
+  DEFAULT_RUN_LIMITS,
+  resolveLimits,
+} from './capabilities/code.js';
+export type {
+  CodeProvider,
+  ExitInfo,
+  RunHandle,
+  RunLanguage,
+  RunLimits,
+  RunRequest,
+} from './capabilities/code.js';
