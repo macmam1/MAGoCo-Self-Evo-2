@@ -1,0 +1,17 @@
+{
+  "runtime": {
+    "sdk_type": "custom",
+    "base_image": "node:20-alpine",
+    "start_command": "cd /workspace && npm install && npm run build && npm run start"
+  },
+  "ports": [
+    {
+      "container_port": 8080,
+      "protocol": "tcp"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "8080"
+  }
+}
