@@ -464,7 +464,7 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 
 | PR | Feature | Status |
 |---|---|---|
-| #60 | Docker Containerization | 🔴 Next |
+| #60 | Docker Containerization | ✅ Merged |
 | #61 | CI/CD Pipeline | ⏳ Pending |
 | #62 | Health Check & Monitoring | ⏳ Pending |
 | #63 | API Documentation | ⏳ Pending |
