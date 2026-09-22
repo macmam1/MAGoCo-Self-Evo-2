@@ -6,3 +6,7 @@ export { createWorkflowRunner } from './runner.js';
 export type { WorkflowRunner, RunnerOptions, WorkflowEntry } from './runner.js';
 export { buildWorkflowFromPrompt, createRuleBasedParser } from './builder.js';
 export type { ParsedWorkflow, WorkflowParser } from './builder.js';
+export { exportWorkflow, importWorkflow } from './serializer.js';
+export type { WorkflowExport } from './serializer.js';
+export { createSubWorkflowRegistry, createSubWorkflowExecutor } from './sub-workflow.js';
+export type { SubWorkflowRegistry } from './sub-workflow.js';
