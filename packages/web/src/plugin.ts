@@ -44,7 +44,7 @@ import {
   type LlmRequest,
   type LlmResponse,
 } from '@magoco/agents';
-import { FS_CAPABILITY, type FileSystemCapability, type RunHandle, EDIT_CAPABILITY, editDef } from '@magoco/core';
+import { FS_CAPABILITY, type FileSystemCapability, type RunHandle, EDIT_CAPABILITY, editDef, AI_CODE_CAPABILITY, aiCodeDef, type AIProvider, VIEWPORT_CAPABILITY, viewportDef } from '@magoco/core';
 import { TERMINAL_CAPABILITY, termDef, type TermRequest } from '../../core/src/capabilities/terminal.js';
 import type { FsCommand, FsFrame } from '../../sandbox/src/fs-protocol.js';
 import { isFsCommand } from '../../sandbox/src/fs-protocol.js';

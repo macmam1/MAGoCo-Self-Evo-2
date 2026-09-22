@@ -49,6 +49,7 @@ export type {
 } from './capabilities/code.js';
 export { EDIT_CAPABILITY, editDef, type EditProvider } from './capabilities/edit.js';
 export { AI_CODE_CAPABILITY, aiCodeDef, type AIProvider } from './capabilities/ai-code.js';
+export { VIEWPORT_CAPABILITY, viewportDef, type ViewportProvider } from './capabilities/view.js';
 export type {
   EditFile,
   EditRequest,

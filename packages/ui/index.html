@@ -148,6 +148,29 @@
       ws.onmessage = (e) => { termOutput.textContent += e.data; };
       ws.onclose = () => { termOutput.textContent += 'Disconnected\n'; };
     };
+
+    // Phase 3.7 — viewport + mouse tracking
+    const ws = new WebSocket(`ws://${location.host}/ws`);
+    ws.binaryType = 'arraybuffer';
+    ws.onmessage = (e) => {
+      if (typeof e.data !== 'string') return;
+      const frame = JSON.parse(e.data);
+      if (frame.kind === 'text') {
+        const msg = JSON.parse(frame.text);
+        console.log('Agent:', msg);
+      }
+    };
+    function sendViewport(msg) {
+      if (ws.readyState !== 1) return; // OPEN
+      const payload = new TextEncoder().encode(JSON.stringify(msg));
+      const mask = new Uint8Array([0x12, 0x34, 0x56, 0x78]);
+      const masked = new Uint8Array(payload.length);
+      for (let i = 0; i < payload.length; i++) masked[i] = payload[i] ^ mask[i % 4];
+      const header = new Uint8Array([0x81, 0x80 | payload.length]);
+      ws.send(Buffer.from([...header, ...mask, ...masked]));
+    }
+    window.addEventListener('mousemove', (e) => sendViewport({ type: 'viewport', x: e.clientX, y: e.clientY }));
+    window.addEventListener('scroll', () => sendViewport({ type: 'viewport', scrollY: window.scrollY }));
   </script>
 </body>
 </html>
