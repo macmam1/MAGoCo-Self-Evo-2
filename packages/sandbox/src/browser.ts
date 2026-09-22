@@ -1,7 +1,8 @@
 /**
  * Browser provider implementation using Playwright.
  *
- * Enables collaborative browser control between user and agent.
+ * Each call to createBrowserProvider() returns an isolated instance
+ * with its own session state — no shared module-level mutable state.
  */
 
 import type {
@@ -10,117 +11,78 @@ import type {
   BrowserProvider,
 } from '../../core/src/capabilities/browser.js';
 
-// ============================================================================
-// SESSION STATE
-// ============================================================================
-
-let currentSession: BrowserState | null = null;
-let playwright: any = null;
-let mockUrl = 'about:blank';
-let mockTitle = 'New Tab';
-
-// Try to load playwright (optional dependency)
+// Try to load playwright (optional dependency — falls back to mock in CI)
+let playwrightMod: any = null;
 try {
-  playwright = require('playwright');
-} catch (e) {
-  console.warn('⚠️ Playwright not installed. Using mock browser for testing.');
-  console.warn('Install with: npx playwright install');
+  playwrightMod = require('playwright');
+} catch {
+  // mock fallback — no warning spam in tests
 }
 
-// ============================================================================
-// PROVIDER IMPLEMENTATION
-// ============================================================================
-
 export function createBrowserProvider(): BrowserProvider {
+  // All state is instance-local
+  let session: (BrowserState & { page?: any; browser?: any }) | null = null;
+
   return {
     async launch(config: BrowserConfig): Promise<BrowserState> {
       const sessionId = `browser_${Date.now()}`;
-      
-      if (playwright) {
-        // Real Playwright implementation
-        const browser = await playwright.chromium.launch({
-          headless: config.headless ?? false,
+
+      if (playwrightMod) {
+        const browser = await playwrightMod.chromium.launch({
+          headless: config.headless ?? true,
         });
         const page = await browser.newPage();
-        if (config.viewport) {
-          await page.setViewportSize(config.viewport);
-        }
-        if (config.userAgent) {
-          await page.setUserAgent(config.userAgent);
-        }
-        currentSession = {
-          sessionId,
-          url: 'about:blank',
-          title: 'New Tab',
-        };
-        // Store page/browser in session for later use
-        (currentSession as any).page = page;
-        (currentSession as any).browser = browser;
-        return currentSession;
+        if (config.viewport) await page.setViewportSize(config.viewport);
+        if (config.userAgent) await page.setExtraHTTPHeaders({ 'user-agent': config.userAgent });
+
+        session = { sessionId, url: 'about:blank', title: 'New Tab', page, browser };
       } else {
-        // Mock implementation
-        currentSession = {
-          sessionId,
-          url: 'about:blank',
-          title: 'New Tab',
-        };
-        return currentSession;
+        session = { sessionId, url: 'about:blank', title: 'New Tab' };
       }
+
+      return { sessionId: session.sessionId, url: session.url, title: session.title };
     },
-    
+
     async navigate(url: string): Promise<void> {
-      if (playwright && currentSession) {
-        // Real Playwright navigation
-        const page = (currentSession as any).page;
-        await page.goto(url);
-        mockUrl = url;
-        mockTitle = await page.title();
-        currentSession.url = url;
-        currentSession.title = mockTitle;
+      if (!session) {
+        // auto-init a mock session so navigate-without-launch doesn't crash
+        session = { sessionId: `browser_${Date.now()}`, url: 'about:blank', title: 'New Tab' };
+      }
+      if (session.page) {
+        await session.page.goto(url);
+        session.url = url;
+        session.title = await session.page.title();
       } else {
-        // Mock navigation
-        mockUrl = url;
-        currentSession = currentSession || { sessionId: 'mock', url: '', title: '' };
-        currentSession.url = url;
-        currentSession.title = `Page: ${url}`;
+        session.url = url;
+        session.title = `Page: ${url}`;
       }
     },
-    
+
     async screenshot(): Promise<string> {
-      if (playwright && currentSession) {
-        const page = (currentSession as any).page;
-        const screenshot = await page.screenshot({ encoding: 'base64' });
-        return `data:image/png;base64,${screenshot}`;
-      } else {
-        // Return placeholder
-        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiM5OTkiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPjNvdXNoPC90ZXh0Pjwvc3ZnPg==';
+      if (session?.page) {
+        const buf: string = await session.page.screenshot({ encoding: 'base64' });
+        return `data:image/png;base64,${buf}`;
       }
+      // Minimal 1×1 transparent PNG as placeholder
+      return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
     },
-    
+
     async mouseMove(x: number, y: number): Promise<void> {
-      if (playwright && currentSession) {
-        const page = (currentSession as any).page;
-        await page.mouse.move(x, y);
-      }
+      if (session?.page) await session.page.mouse.move(x, y);
     },
-    
+
     async click(x: number, y: number): Promise<void> {
-      if (playwright && currentSession) {
-        const page = (currentSession as any).page;
-        await page.mouse.click(x, y);
-      }
+      if (session?.page) await session.page.mouse.click(x, y);
     },
-    
+
     async close(): Promise<void> {
-      if (playwright && currentSession) {
-        const browser = (currentSession as any).browser;
-        if (browser) await browser.close();
-      }
-      currentSession = null;
+      if (session?.browser) await session.browser.close();
+      session = null;
     },
-    
+
     async getState(): Promise<BrowserState | null> {
-      return currentSession;
+      if (!session) return null;
+      return { sessionId: session.sessionId, url: session.url, title: session.title };
     },
   };
 }
