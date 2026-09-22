@@ -387,6 +387,7 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #52 | merged | 2026-09-22 | Human Assist (HITL) |
 | #53 | in_progress | 2026-09-22 | Skill Capture |
 | #54 | in_progress | 2026-09-22 | Proxy/Identity Masking |
+| #55 | merged | 2026-09-22 | Experience Engine (capture → embed → retrieve → inject) |
 | #42 | in_progress | 2026-09-22 | AI code generation/review/debug (Phase 3.5) |
 
 **جزییات PR #39 (در دست ساخت):**
