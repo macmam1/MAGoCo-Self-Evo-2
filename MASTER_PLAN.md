@@ -382,6 +382,7 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #46 | merged | 2026-09-22 | Atomic multi-file edit capability (tests passing) |
 | #49 | merged | 2026-09-22 | i18n (fa + en) + language selector |
 | #50 | merged | 2026-09-22 | dark/light theme switcher |
+| #42 | in_progress | 2026-09-22 | AI code generation/review/debug (Phase 3.5) |
 
 **جزییات PR #39 (در دست ساخت):**
 
