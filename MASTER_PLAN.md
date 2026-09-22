@@ -95,7 +95,8 @@ magoco/
 - [ ] cost tracking و token usage per agent
 - [ ] agent personas / roles / قالب‌های از پیش ساخته‌شده
 
-### ۲.۲ خودتکامل و یادگیری (از Hermes-Agent، MAGoCo signature)
+### ۲.۲ خودتکامل و یادگیری
+- [ ] **Experience Engine:** capture → embed → retrieve → inject (Phase 3.6) (از Hermes-Agent، MAGoCo signature)
 - [ ] reflection پس از هر تسک (موفقیت/شکست)
 - [ ] pattern mining از تاریخچه
 - [ ] بهینه‌سازی خودکار پرامپت

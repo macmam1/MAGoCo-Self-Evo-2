@@ -51,6 +51,7 @@ export { EDIT_CAPABILITY, editDef, type EditProvider } from './capabilities/edit
 export { AI_CODE_CAPABILITY, aiCodeDef, type AIProvider } from './capabilities/ai-code.js';
 export { VIEWPORT_CAPABILITY, viewportDef, type ViewportProvider } from './capabilities/view.js';
 export { HUMAN_ASSIST_CAPABILITY, humanDef, type HumanProvider } from './capabilities/human-assist.js';
+export { EXPERIENCE_CAPABILITY, experienceDef, type ExperienceProvider } from './capabilities/experience.js';
 export type {
   EditFile,
   EditRequest,
