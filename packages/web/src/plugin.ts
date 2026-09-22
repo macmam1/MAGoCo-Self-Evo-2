@@ -50,6 +50,7 @@ import type { FsCommand, FsFrame } from '../../sandbox/src/fs-protocol.js';
 import { isFsCommand } from '../../sandbox/src/fs-protocol.js';
 import { createTermProvider } from '../../sandbox/src/terminal.js';
 import { createEditProvider } from '../../sandbox/src/edit.js';
+import { createAIProvider } from '../../sandbox/src/ai-code.js';
 
 /** Read all chunks from a stream into a single string. */
 function streamToString(s: AsyncIterable<string>): Promise<string> {
@@ -84,6 +85,8 @@ export function register(ctx: PluginRegisterContext): void {
   ctx.registry.provide(TERMINAL_CAPABILITY, 'web', termProvider);
   const editProvider = createEditProvider();
   ctx.registry.provide(EDIT_CAPABILITY, 'sandbox', editProvider);
+  const aiProvider = createAIProvider({});
+  ctx.registry.provide(AI_CODE_CAPABILITY, 'sandbox', aiProvider);
 
   // The sandbox capability: the /fs socket routes to it. Resolved lazily so
   // the web plugin still boots in profiles that enable only `web` (spec §9
