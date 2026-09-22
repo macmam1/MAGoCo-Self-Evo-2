@@ -366,3 +366,34 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 - هر تغییر در `MASTER_PLAN.md` نیاز به یک کامیت مجزا با عنوان `docs: ...` دارد.
 - تعریف «انجام‌شده» بخش ۵ برای شروع فاز بعدی شرط است.
 
+
+---
+
+## بخش ۷: پیگیری PR و milestones
+
+### Phase 3 (کد و سندباکس)
+
+| PR | وضعیت | تاریخچه | توضیحات |
+|---|---|---|---|
+| #36 | merged | 2026-09-21 | `magoco.fs` capability + path guard + /fs socket |
+| #39 | in_progress | 2026-09-22 | `magoco.code.run` + tier-1 sandbox + limits |
+
+**جزییات PR #39 (در دست ساخت):**
+
+- **تعریف:** packages/core/src/capabilities/code.ts (RunRequest/RunLimits/ExitInfo/RunHandle)
+- **سندباکس:** packages/sandbox/src/runner.ts
+  - Bash ulimit bridge (RLIMIT_CPU, RLIMIT_FSIZE, RLIMIT_AS برای Python)
+  - RLIMIT_NPROC اعمال نشد (Node worker thread scheduler را می‌کشد)
+  - RLIMIT_AS روی Node اعمال نشد (V8 CodeRange reservation را می‌کشد)
+- **پلاگین:** packages/sandbox/src/plugin.ts (factory per-session)
+- **تست‌ها:** packages/sandbox/test/runner.test.ts (۱۱ تست)
+  - T-S1 (whitelist env): ✅
+  - T-S3 (RLIMIT_AS for Python / fork bomb): ✅
+  - T-S4/T-S5/T-S11: ⏳ در حال دیباگ
+
+**Definition of Done برای PR #39:**
+- [ ] تمام تست‌های runner سبز
+- [ ] typecheck بدون خطا
+- [ ] تست واقعی اجرا شود (یک اسکریپت Python و JS در sandbox با خروجی استریم‌شده)
+- [ ] PR باز شود با تست‌ها + مستندات کوتاه
+- [ ] Issue #39 بسته شود
