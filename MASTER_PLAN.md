@@ -382,6 +382,10 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #46 | merged | 2026-09-22 | Atomic multi-file edit capability (tests passing) |
 | #49 | merged | 2026-09-22 | i18n (fa + en) + language selector |
 | #50 | merged | 2026-09-22 | dark/light theme switcher |
+| #51 | in_progress | 2026-09-22 | Mouse tracking + Viewport sync |
+| #52 | in_progress | 2026-09-22 | Human Assist (HITL) |
+| #53 | in_progress | 2026-09-22 | Skill Capture |
+| #54 | in_progress | 2026-09-22 | Proxy/Identity Masking |
 | #42 | in_progress | 2026-09-22 | AI code generation/review/debug (Phase 3.5) |
 
 **جزییات PR #39 (در دست ساخت):**
@@ -434,3 +438,15 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 - [ ] تست واقعی اجرا شود (یک اسکریپت Python و JS در sandbox با خروجی استریم‌شده)
 - [ ] PR باز شود با تست‌ها + مستندات کوتاه
 - [ ] Issue #39 بسته شود
+
+---
+
+### Phase 3.7: Collaborative Browsing & Privacy (New)
+
+- [ ] **Shared Viewport Sync:** همگام‌سازی موقعیت اسکرول و هاور در WebSocket
+- [ ] **Mouse Tracking:** ارسال موقعیت موس کاربر به ایجنت برای تشخیص نیت
+- [ ] **Human Assist (HITL):** توقف ایجنت در نقاط بحرانی (فرم‌ها، کپچا، دکمه‌های ریسکی)
+- [ ] **Skill Capture:** یادگیری خودکار از کارهای دستی کاربر برای تکرار آینده
+- [ ] **Proxy/Identity Masking:** تنظیم پروکسی در سطح Session (نه کل مرورگر)
+- [ ] **Action Preview:** نمایش پیش‌نمایش عملیات قبل از اجرا برای تایید کاربر
+- [ ] **Cursor Sync:** همگام‌سازی نشانگر موس در پنل مشترک
