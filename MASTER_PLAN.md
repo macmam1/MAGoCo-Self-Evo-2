@@ -383,7 +383,7 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #49 | merged | 2026-09-22 | i18n (fa + en) + language selector |
 | #50 | merged | 2026-09-22 | dark/light theme switcher |
 | #51 | merged | 2026-09-22 | Mouse tracking + Viewport sync |
-| #52 | in_progress | 2026-09-22 | Human Assist (HITL) |
+| #52 | merged | 2026-09-22 | Human Assist (HITL) |
 | #53 | in_progress | 2026-09-22 | Skill Capture |
 | #54 | in_progress | 2026-09-22 | Proxy/Identity Masking |
 | #42 | in_progress | 2026-09-22 | AI code generation/review/debug (Phase 3.5) |
