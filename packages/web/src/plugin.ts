@@ -44,9 +44,22 @@ import {
   type LlmRequest,
   type LlmResponse,
 } from '@magoco/agents';
-import { FS_CAPABILITY, type FileSystemCapability } from '@magoco/core';
+import { FS_CAPABILITY, type FileSystemCapability, type RunHandle } from '@magoco/core';
 import type { FsCommand, FsFrame } from '../../sandbox/src/fs-protocol.js';
-import { handleFsCommand } from '../../sandbox/src/fs-wire.js';
+import { isFsCommand } from '../../sandbox/src/fs-protocol.js';
+
+/** Read all chunks from a stream into a single string. */
+function streamToString(s: AsyncIterable<string>): Promise<string> {
+  const chunks: string[] = [];
+  return new Promise((resolve) => {
+    (async () => {
+      for await (const chunk of s) {
+        chunks.push(chunk);
+      }
+      resolve(chunks.join(''));
+    })();
+  });
+}
 
 export const manifest: PluginManifest = {
   name: 'web',
@@ -161,6 +174,29 @@ export function register(ctx: PluginRegisterContext): void {
         staticDir,
         noCache: true,
         port: cfg.port ?? 3837,
+        onRunCommand: (body, reply) => {
+          const provider = ctx.registry.resolve('magoco.code.run') as { run?: (a: unknown) => Promise<any> };
+          if (!provider?.run) {
+            reply({ code: 1, stdout: '', stderr: 'magoco.code.run capability not found' });
+            return;
+          }
+          provider.run({
+            source: body.source,
+            language: body.language,
+            limits: { timeoutMs: 30000, memoryMB: 512, cpuMs: 10000, maxFileBytes: 65536 },
+          })
+            .then(async (handle: RunHandle) => {
+              const [stdout, stderr] = await Promise.all([
+                streamToString(handle.stdout),
+                streamToString(handle.stderr),
+              ]);
+              const exitInfo = await handle.done;
+              reply({ code: exitInfo.code ?? 1, stdout, stderr });
+            })
+            .catch((e) => {
+              reply({ code: 1, stdout: '', stderr: e instanceof Error ? e.message : String(e) });
+            });
+        },
         onCommand: (cmd: ClientCommand, reply: (f: ClientFrame) => void) => {
           switch (cmd.c) {
             case 'create': {

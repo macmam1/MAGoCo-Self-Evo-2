@@ -32,6 +32,11 @@ export interface ServeOptions {
     cmd: FsCommand,
     reply: (f: FsFrame) => void,
   ) => void;
+  /** Handles a run request (POST /api/run). */
+  readonly onRunCommand?: (
+    body: { source: string; language: 'js' | 'py' },
+    reply: (resp: { code: number; stdout: string; stderr: string }) => void,
+  ) => void;
   /** Called when a socket closes; the server drops it from its set. */
   readonly onSocketClose?: () => void;
 }
@@ -69,8 +74,32 @@ export function serve(opts: ServeOptions): Promise<ServeHandle> {
     const senders = new Set<(f: ClientFrame) => void>();
 
     const server = http.createServer((req, res) => {
-      // Static file serving. Unknown paths → 404, never a directory listing.
       const urlPath = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+      // POST /api/run — code execution endpoint
+      if (req.method === 'POST' && urlPath === '/api/run') {
+        if (!opts.onRunCommand) {
+          res.writeHead(501).end('not implemented');
+          return;
+        }
+        let body = '';
+        req.on('data', (chunk) => { body += chunk; });
+        req.on('end', () => {
+          try {
+            const data = JSON.parse(body);
+            if (typeof data.source !== 'string' || !['js', 'py'].includes(data.language)) {
+              res.writeHead(400).end('invalid request');
+              return;
+            }
+            opts.onRunCommand(data, (resp) => {
+              res.writeHead(200, { 'content-type': 'application/json' });
+              res.end(JSON.stringify(resp));
+            });
+          } catch {
+            res.writeHead(400).end('invalid json');
+          }
+        });
+        return;
+      }
       // Prevent path traversal: anything that escapes staticDir is refused.
       const resolved = path.resolve(opts.staticDir, '.' + (urlPath === '/' ? '/index.html' : urlPath));
       if (!resolved.startsWith(path.resolve(opts.staticDir))) {
