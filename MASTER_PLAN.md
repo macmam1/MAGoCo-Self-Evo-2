@@ -392,6 +392,8 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #57 | merged | 2026-09-22 | MCP Client (Complete) |
 | #58 | merged | 2026-09-22 | GitHub Sync (Bidirectional) |
 | #42 | merged | 2026-09-22 | AI code generation/review/debug (Phase 3.5) |
+| #59 | merged | 2026-09-22 | Collaborative Browsing (Live Playwright) |
+| #41 | in_progress | 2026-09-22 | Live Preview (Phase 3.6) |
 
 **جزییات PR #39 (در دست ساخت):**
 
