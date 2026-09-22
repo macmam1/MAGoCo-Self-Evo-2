@@ -375,7 +375,8 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 
 | PR | وضعیت | تاریخچه | توضیحات |
 |---|---|---|---|
-| #36 | merged | 2026-09-21 | `magoco.fs` capability + path guard + /fs socket |
+| #35 | merged | 2026-09-22 | Monaco editor + textarea fallback (no-build) |
+| #38 | in_progress | 2026-09-22 | Run button + output streaming UI |
 | #39 | merged | 2026-09-22 | `magoco.code.run` + tier-1 sandbox + limits (91% tests) |
 
 **جزییات PR #39 (در دست ساخت):**
@@ -395,6 +396,22 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
   - T-S4 orphan cleanup: ❌ (process.kill(-pid) unsupported in container)
 
 **Status:** 9/11 tests passing (91%)
+
+---
+
+### PR #38 - Execution UI (در دست ساخت)
+
+- **views/execution.ts:** Run button + output panel
+- **Integration:** `/api/run` endpoint (pending)
+- **TODO:** Wire to `magoco.code.run` capability via websocket
+
+---
+
+### PR #35 - Editor (merged)
+
+- **views/editor.ts:** Monaco with textarea fallback (no-build)
+- **CDN:** `cdn.jsdelivr.net` for Monaco ESM
+- **Fallback:** `textarea` if CDN unavailable
 
 **Definition of Done برای PR #39:**
 - [ ] تمام تست‌های runner سبز
