@@ -1,60 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>MAGoCo Editor</title>
+  <title>MAGoCo - Code Execution</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     .main { display: flex; gap: 20px; }
     .editor-pane, .execution-pane { flex: 1; }
     .execution-controls { margin-bottom: 10px; }
     .execution-output pre { background: #1e1e1e; color: #d4d4d4; padding: 10px; min-height: 100px; }
+    textarea { width: 100%; height: 400px; font-family: monospace; font-size: 14px; }
   </style>
 </head>
 <body>
-  <h1>MAGoCo Code Editor</h1>
+  <h1>MAGoCo - Code Execution</h1>
   <div class="main">
-    <div class="editor-pane" id="editor"></div>
-    <div class="execution-pane" id="execution"></div>
+    <div class="editor-pane">
+      <h2>Code Editor</h2>
+      <textarea id="code-editor">console.log("Hello from MAGoCo");</textarea>
+    </div>
+    <div class="execution-pane">
+      <h2>Execution</h2>
+      <div id="execution-view"></div>
+    </div>
   </div>
-
   <script type="module">
-    // Fallback: just show textarea and basic execution UI
-    const editorContainer = document.getElementById('editor');
-    const executionContainer = document.getElementById('execution');
-
-    const editor = document.createElement('textarea');
-    editor.placeholder = 'Write your code here...';
-    editor.style.cssText = 'width: 100%; height: 400px; font-family: monospace;';
-    editorContainer.appendChild(editor);
-
-    const execView = document.createElement('div');
-    execView.innerHTML = `
-      <div class="execution-controls">
-        <button id="run-btn">Run</button>
-      </div>
-      <div class="execution-output">
-        <pre id="output"></pre>
-      </div>
-    `;
-    executionContainer.appendChild(execView);
-
-    document.getElementById('run-btn').addEventListener('click', async () => {
-      const code = editor.value;
-      const output = document.getElementById('output');
-      output.textContent = 'Running...';
-
-      try {
-        const res = await fetch('/api/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ source: code, language: 'js' }),
-        });
-        const data = await res.json();
-        output.textContent = data.stdout || '';
-      } catch (e) {
-        output.textContent = `Error: ${e.message}`;
-      }
-    });
+    const editor = document.getElementById('code-editor');
+    const execContainer = document.getElementById('execution-view');
+    const { renderExecutionView } = await import('./packages/ui/index.js');
+    const execView = renderExecutionView(editor);
+    execContainer.appendChild(execView);
   </script>
 </body>
 </html>

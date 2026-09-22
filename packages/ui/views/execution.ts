@@ -9,7 +9,7 @@ export interface RunState {
   error?: string;
 }
 
-export function renderExecutionView(): HTMLElement {
+export function renderExecutionView(sourceInput: HTMLTextAreaElement): HTMLElement {
   const container = document.createElement('div');
   container.className = 'execution-view';
   container.innerHTML = `
@@ -29,6 +29,14 @@ export function renderExecutionView(): HTMLElement {
   let state: RunState = { status: 'idle', output: '' };
 
   runBtn.addEventListener('click', async () => {
+    const source = sourceInput.value;
+    if (!source.trim()) {
+      state.status = 'error';
+      state.error = 'Please enter some code';
+      output.textContent = 'Error: Please enter some code';
+      return;
+    }
+
     state.status = 'running';
     state.output = '';
     state.error = undefined;
@@ -37,15 +45,15 @@ export function renderExecutionView(): HTMLElement {
     output.textContent = 'Running...';
 
     try {
-      // TODO: Connect to magoco.code.run capability via websocket
       const response = await fetch('/api/run', {
         method: 'POST',
-        body: JSON.stringify({ source: 'console.log("hello")', language: 'js' }),
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ source, language: 'js' }),
       });
       const data = await response.json();
       state.output = data.stdout || '';
       state.status = 'done';
-      output.textContent = data.stdout || '';
+      output.textContent = data.stdout || (data.stderr || '') || 'No output';
     } catch (e) {
       state.error = (e as Error).message;
       state.status = 'error';
