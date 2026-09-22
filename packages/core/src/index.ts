@@ -52,6 +52,7 @@ export { AI_CODE_CAPABILITY, aiCodeDef, type AIProvider } from './capabilities/a
 export { VIEWPORT_CAPABILITY, viewportDef, type ViewportProvider } from './capabilities/view.js';
 export { HUMAN_ASSIST_CAPABILITY, humanDef, type HumanProvider } from './capabilities/human-assist.js';
 export { EXPERIENCE_CAPABILITY, experienceDef, type ExperienceProvider } from './capabilities/experience.js';
+export { SKILL_CAPTURE_CAPABILITY, skillCaptureDef, type SkillProvider } from './capabilities/skill-capture.js';
 export type {
   EditFile,
   EditRequest,
