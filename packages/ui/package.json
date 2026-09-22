@@ -1,18 +1,9 @@
 {
   "name": "@magoco/ui",
-  "version": "0.0.1",
-  "description": "MAGoCo browser client — framework-free ES modules",
+  "version": "0.1.0",
   "type": "module",
-  "main": "./src/index.ts",
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test --import tsx ./test/*.test.ts"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "typescript": "^5.6.0",
-    "tsx": "^4.19.0",
-    "@types/node": "^22.0.0"
+  "main": "index.ts",
+  "peerDependencies": {
+    "@magoco/web": "workspace:*"
   }
 }
