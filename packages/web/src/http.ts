@@ -37,6 +37,11 @@ export interface ServeOptions {
     body: { source: string; language: 'js' | 'py' },
     reply: (resp: { code: number; stdout: string; stderr: string }) => void,
   ) => void;
+  /** Handles an edit request (POST /api/edit). */
+  readonly onEditCommand?: (
+    body: { files: { path: string; content: string }[] },
+    reply: (resp: { results: { path: string; success: boolean; error?: string }[] }) => void,
+  ) => void;
   /** Called when a socket closes; the server drops it from its set. */
   readonly onSocketClose?: () => void;
 }
@@ -91,6 +96,31 @@ export function serve(opts: ServeOptions): Promise<ServeHandle> {
               return;
             }
             opts.onRunCommand(data, (resp) => {
+              res.writeHead(200, { 'content-type': 'application/json' });
+              res.end(JSON.stringify(resp));
+            });
+          } catch {
+            res.writeHead(400).end('invalid json');
+          }
+        });
+        return;
+      }
+      // POST /api/edit — atomic multi-file edit endpoint
+      if (req.method === 'POST' && urlPath === '/api/edit') {
+        if (!opts.onEditCommand) {
+          res.writeHead(501).end('not implemented');
+          return;
+        }
+        let body = '';
+        req.on('data', (chunk) => { body += chunk; });
+        req.on('end', () => {
+          try {
+            const data = JSON.parse(body);
+            if (!Array.isArray(data.files)) {
+              res.writeHead(400).end('invalid request');
+              return;
+            }
+            opts.onEditCommand?.(data, (resp) => {
               res.writeHead(200, { 'content-type': 'application/json' });
               res.end(JSON.stringify(resp));
             });

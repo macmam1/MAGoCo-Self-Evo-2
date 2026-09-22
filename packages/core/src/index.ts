@@ -47,3 +47,10 @@ export type {
   RunLimits,
   RunRequest,
 } from './capabilities/code.js';
+export { EDIT_CAPABILITY, editDef, type EditProvider } from './capabilities/edit.js';
+export type {
+  EditFile,
+  EditRequest,
+  EditResponse,
+  EditResult,
+} from './capabilities/edit.js';

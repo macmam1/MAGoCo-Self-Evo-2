@@ -44,11 +44,12 @@ import {
   type LlmRequest,
   type LlmResponse,
 } from '@magoco/agents';
-import { FS_CAPABILITY, type FileSystemCapability, type RunHandle } from '@magoco/core';
+import { FS_CAPABILITY, type FileSystemCapability, type RunHandle, EDIT_CAPABILITY, editDef } from '@magoco/core';
 import { TERMINAL_CAPABILITY, termDef, type TermRequest } from '../../core/src/capabilities/terminal.js';
 import type { FsCommand, FsFrame } from '../../sandbox/src/fs-protocol.js';
 import { isFsCommand } from '../../sandbox/src/fs-protocol.js';
 import { createTermProvider } from '../../sandbox/src/terminal.js';
+import { createEditProvider } from '../../sandbox/src/edit.js';
 
 /** Read all chunks from a stream into a single string. */
 function streamToString(s: AsyncIterable<string>): Promise<string> {
@@ -81,6 +82,8 @@ export function register(ctx: PluginRegisterContext): void {
   ctx.registry.registerDef(termDef);
   const termProvider = createTermProvider();
   ctx.registry.provide(TERMINAL_CAPABILITY, 'web', termProvider);
+  const editProvider = createEditProvider();
+  ctx.registry.provide(EDIT_CAPABILITY, 'sandbox', editProvider);
 
   // The sandbox capability: the /fs socket routes to it. Resolved lazily so
   // the web plugin still boots in profiles that enable only `web` (spec §9
@@ -200,6 +203,20 @@ export function register(ctx: PluginRegisterContext): void {
             })
             .catch((e) => {
               reply({ code: 1, stdout: '', stderr: e instanceof Error ? e.message : String(e) });
+            });
+        },
+        onEditCommand: (body, reply) => {
+          const provider = ctx.registry.resolve('magoco.fs.edit') as { edit?: (a: unknown) => Promise<any> };
+          if (!provider?.edit) {
+            reply({ results: [] });
+            return;
+          }
+          provider.edit({ files: body.files })
+            .then((resp) => {
+              reply({ results: resp.results });
+            })
+            .catch((e) => {
+              reply({ results: [{ path: 'error', success: false, error: e instanceof Error ? e.message : String(e) }] });
             });
         },
         onCommand: (cmd: ClientCommand, reply: (f: ClientFrame) => void) => {

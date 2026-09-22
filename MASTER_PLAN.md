@@ -378,7 +378,8 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #35 | merged | 2026-09-22 | Monaco editor + textarea fallback (no-build) |
 | #38 | merged | 2026-09-22 | Run button + output streaming UI |
 | #39 | merged | 2026-09-22 | `magoco.code.run` + tier-1 sandbox + limits (91% tests) |
-| #37 | in_progress | 2026-09-22 | Terminal capability + WebSocket + xterm UI |
+| #37 | merged | 2026-09-22 | Terminal capability + WebSocket + xterm UI |
+| #46 | in_progress | 2026-09-22 | Atomic multi-file edit capability |
 
 **جزییات PR #39 (در دست ساخت):**
 
@@ -400,13 +401,11 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 
 ---
 
-### PR #37 - Terminal (در دست ساخت)
+### PR #37 - Terminal (merged)
 
 - **core/capabilities/terminal.ts:** Capability definition
 - **sandbox/terminal.ts:** Terminal provider (Node child_process)
 - **web/plugin.ts:** Register terminal provider
-- **ui/views/terminal.ts:** Terminal UI
-- **TODO:** Wire WebSocket /terminal endpoint
 
 ---
 
@@ -419,11 +418,12 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 
 ---
 
-### PR #35 - Editor (merged)
+### PR #46 - Atomic Edit (در دست ساخت)
 
-- **views/editor.ts:** Monaco with textarea fallback (no-build)
-- **CDN:** `cdn.jsdelivr.net` for Monaco ESM
-- **Fallback:** `textarea` if CDN unavailable
+- **core/capabilities/edit.ts:** Capability definition
+- **sandbox/edit.ts:** Atomic file writer (temp + rename)
+- **web/plugin.ts:** POST `/api/edit` endpoint
+- **TODO:** Integration tests
 
 **Definition of Done برای PR #39:**
 - [ ] تمام تست‌های runner سبز
