@@ -44,6 +44,8 @@ export interface ServeOptions {
   ) => void;
   /** Called when a socket closes; the server drops it from its set. */
   readonly onSocketClose?: () => void;
+  /** Terminal provider for /terminal WebSocket. */
+  readonly termProvider?: { start(request: { command: string; args: string[] }): { onOutput: (cb: (data: string) => void) => void; onData: (data: string) => void; kill: () => void } };
 }
 
 export interface ServeHandle {
@@ -166,8 +168,23 @@ export function serve(opts: ServeOptions): Promise<ServeHandle> {
     server.on('upgrade', (req, socket: Socket) => {
       const url = req.url ?? '/';
       // Only our own endpoints are upgraded; anything else is refused.
-      if (url !== '/ws' && url !== '/fs') {
+      if (url !== '/ws' && url !== '/fs' && url !== '/terminal') {
         socket.destroy();
+        return;
+      }
+      // Terminal upgrade
+      if (url === '/terminal' && opts.termProvider) {
+        const sess = opts.termProvider.start({ command: 'bash', args: ['-i'] });
+        sess.onOutput((data) => {
+          socket.write(data);
+        });
+        socket.on('data', (chunk) => {
+          sess.onData(chunk.toString());
+        });
+        socket.on('close', () => {
+          sess.kill();
+          opts.onSocketClose?.();
+        });
         return;
       }
       let handle: ReturnType<typeof upgradeWebSocket> = null;

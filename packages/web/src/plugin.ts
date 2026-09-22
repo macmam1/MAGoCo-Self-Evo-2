@@ -182,6 +182,7 @@ export function register(ctx: PluginRegisterContext): void {
         staticDir,
         noCache: true,
         port: cfg.port ?? 3837,
+        termProvider,
         onRunCommand: (body, reply) => {
           const provider = ctx.registry.resolve('magoco.code.run') as { run?: (a: unknown) => Promise<any> };
           if (!provider?.run) {
