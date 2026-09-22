@@ -55,6 +55,7 @@ export { EXPERIENCE_CAPABILITY, experienceDef, type ExperienceProvider } from '.
 export { SKILL_CAPTURE_CAPABILITY, skillCaptureDef, type SkillProvider } from './capabilities/skill-capture.js';
 export { FIXER_CAPABILITY, fixerDef, type FixerProvider } from './capabilities/fixer.js';
 export { MCP_CAPABILITY, mcpDef, type MCPClient } from './capabilities/mcp.js';
+export { GITHUB_CAPABILITY, githubDef, type GitHubProvider } from './capabilities/github.js';
 export type {
   EditFile,
   EditRequest,
