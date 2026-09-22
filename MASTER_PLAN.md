@@ -379,7 +379,9 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #38 | merged | 2026-09-22 | Run button + output streaming UI |
 | #39 | merged | 2026-09-22 | `magoco.code.run` + tier-1 sandbox + limits (91% tests) |
 | #37 | merged | 2026-09-22 | Terminal capability + WebSocket /terminal endpoint |
-| #46 | in_progress | 2026-09-22 | Atomic multi-file edit capability (tests passing) |
+| #46 | merged | 2026-09-22 | Atomic multi-file edit capability (tests passing) |
+| #49 | merged | 2026-09-22 | i18n (fa + en) + language selector |
+| #50 | merged | 2026-09-22 | dark/light theme switcher |
 
 **جزییات PR #39 (در دست ساخت):**
 
