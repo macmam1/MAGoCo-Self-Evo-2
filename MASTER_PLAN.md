@@ -403,8 +403,8 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 
 - **http.ts:** Added POST `/api/run` endpoint
 - **plugin.ts:** Wired to `magoco.code.run` capability
-- **views/execution.ts:** Run button + output panel
-- **TODO:** Wire UI execution view to endpoint
+- **views/execution.ts:** Fetches code from textarea, calls `/api/run`
+- **index.html:** Integrated editor + execution panel
 
 ---
 
