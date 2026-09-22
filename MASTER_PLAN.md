@@ -390,7 +390,7 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #55 | merged | 2026-09-22 | Experience Engine (capture → embed → retrieve → inject) |
 | #56 | merged | 2026-09-22 | Fixer Agent (Self-Healing & Selector Recovery) |
 | #57 | merged | 2026-09-22 | MCP Client (Complete) |
-| #58 | in_progress | 2026-09-22 | GitHub Sync (Bidirectional) |
+| #58 | merged | 2026-09-22 | GitHub Sync (Bidirectional) |
 | #42 | in_progress | 2026-09-22 | AI code generation/review/debug (Phase 3.5) |
 
 **جزییات PR #39 (در دست ساخت):**
