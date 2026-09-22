@@ -4,3 +4,5 @@ export { registerTrigger, handleWebhook, emitEvent } from './triggers.js';
 export type { TriggerConfig, TriggerHandle } from './triggers.js';
 export { createWorkflowRunner } from './runner.js';
 export type { WorkflowRunner, RunnerOptions, WorkflowEntry } from './runner.js';
+export { buildWorkflowFromPrompt, createRuleBasedParser } from './builder.js';
+export type { ParsedWorkflow, WorkflowParser } from './builder.js';
