@@ -64,3 +64,7 @@ export type {
   EditResponse,
   EditResult,
 } from './capabilities/edit.js';
+export { HEALTH_CAPABILITY, healthDef, type HealthProvider } from './capabilities/health.js';
+export { RUN_CAPABILITY, runDef, type RunProvider } from './capabilities/run.js';
+export { BROWSER_CAPABILITY, browserDef, type BrowserProvider } from './capabilities/browser.js';
+export { TERMINAL_CAPABILITY, termDef, type TermProvider } from './capabilities/terminal.js';
