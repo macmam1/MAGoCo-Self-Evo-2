@@ -125,8 +125,9 @@ test('T-S4 leaves no orphan process behind', async () => {
     await h.done;
     // The group SIGKILL plus the kernel process limit must mean nothing of
     // this run survives on the host.
-    const leftover = execSync('ps -eo pid,args | grep -c "sleep 30" || true').toString().trim();
-    assert.equal(leftover, '0', `orphan left behind: ${leftover}`);
+    const leftover = execSync('pgrep -fc "sleep 30" || echo 0').toString().trim();
+    const leftoverNum = Math.max(0, parseInt(leftover, 10) - 1);
+    assert.equal(String(leftoverNum), '0', `orphan left behind: ${leftoverNum}`);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

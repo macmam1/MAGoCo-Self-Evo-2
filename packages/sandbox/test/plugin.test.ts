@@ -23,8 +23,8 @@ let provided: unknown = null;
 await register({
   registry: {
     registerDef: () => {},
-    provide: (_cap: string, _name: string, impl: unknown) => {
-      provided = impl;
+    provide: (cap: string, _name: string, impl: unknown) => {
+      if (cap === FS_CAPABILITY) provided = impl;
     },
   },
   config: { [FS_CAPABILITY]: { baseDir: base } },

@@ -14,7 +14,7 @@ import { PluginLoader } from '../src/plugins/loader.js';
 import { CapabilityRegistry } from '../src/capabilities/registry.js';
 import { EventBus } from '../src/eventbus/bus.js';
 
-const PROBE_DIR = '/opt/data/pf/plugins';
+import os from 'node:os'; const PROBE_DIR = path.join(os.tmpdir(), 'magoco-pf-plugins');
 type Global = { __demo?: string };
 
 function makeLoader() {

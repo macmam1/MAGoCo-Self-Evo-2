@@ -56,6 +56,8 @@ export function register(ctx: PluginRegisterContext): void {
     maxRootBytes: cfg.maxRootBytes,
   } as FsConfig;
 
+  const handles: SandboxHandles = { fs: new Map() };
+
   ctx.registry.provide(FS_CAPABILITY, manifest.name, {
     /** Create or return the filesystem for a session. */
     async forSession(sessionId: string): Promise<FileSystemCapability> {
@@ -76,7 +78,6 @@ export function register(ctx: PluginRegisterContext): void {
     },
   });
 
-  const handles: SandboxHandles = { fs: new Map() };
 
   // ---- magoco.code.run -------------------------------------------------
   // The sandbox is the only provider of execution (spec §7.1). A run happens

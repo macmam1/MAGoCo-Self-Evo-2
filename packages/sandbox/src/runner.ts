@@ -1,5 +1,6 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { spawn, ChildProcess } from 'node:child_process';
+import * as readline from 'node:readline';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
@@ -22,7 +23,7 @@ const ADAPTERS: Record<RunLanguage, Adapter> = {
   },
   py: {
     interpreters: ['/usr/bin/python3', '/usr/bin/python'],
-    argv: (script) => [script],
+    argv: (script) => ['-u', script],
     filename: 'run.py',
   },
 };
@@ -101,6 +102,7 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
     cwd: root,
     env: sandboxEnv(root),
     stdio: ['pipe', 'pipe', 'pipe'],
+    detached: true,
   });
 
   let timedOut = false;
@@ -112,11 +114,12 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
   let outputBytes = 0;
   const maxBytes = limits.maxOutputBytes;
 
-  if (child.stdout) child.stdout.on('data', (d: Buffer) => {
+  const rl = readline.createInterface({ input: child.stdout!, crlfDelay: Infinity });
+  rl.on('line', (line: string) => {
     if (outputBytes >= maxBytes) return;
-    const chunk = d.toString();
+    const chunk = line + '\n';
     stdoutChunks.push(chunk);
-    outputBytes += Math.min(d.byteLength, maxBytes - outputBytes);
+    outputBytes += Math.min(Buffer.byteLength(chunk), maxBytes - outputBytes);
   });
 
   if (child.stderr) child.stderr.on('data', (d: Buffer) => {
@@ -148,21 +151,29 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
       [Symbol.asyncIterator]() {
         let idx = 0;
         return {
-          async next() {
+          async next(): Promise<IteratorResult<string>> {
             if (idx < stdoutChunks.length) {
               const chunk = stdoutChunks[idx++];
               return chunk && chunk.length > 0 ? { value: chunk, done: false } : this.next();
             }
+            if (timedOut || killed || exitCode !== null) return { value: undefined as unknown as string, done: true };
             return new Promise((resolve) => {
-              const check = () => {
+              const onData = () => {
                 if (idx < stdoutChunks.length) {
                   const chunk = stdoutChunks[idx++];
                   if (chunk && chunk.length > 0) resolve({ value: chunk, done: false });
-                  else check();
-                } else if (timedOut || killed || exitCode !== null) resolve({ value: undefined, done: true });
-                else child.once('close', check);
+                  else resolve(this.next());
+                }
               };
-              check();
+              const onClose = () => {
+                if (idx < stdoutChunks.length) {
+                  const chunk = stdoutChunks[idx++];
+                  if (chunk && chunk.length > 0) { resolve({ value: chunk, done: false }); return; }
+                }
+                resolve({ value: undefined as unknown as string, done: true });
+              };
+              child.stdout!.once('data', onData);
+              child.once('close', onClose);
             });
           },
         };
