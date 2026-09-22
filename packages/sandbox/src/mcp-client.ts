@@ -28,24 +28,27 @@ export class MCPClientImpl extends EventEmitter implements MCPClient {
       // Launch MCP server as subprocess
       this.process = spawn(config.serverCommand, config.serverArgs || []);
       
-      this.process.stdout.on('data', (data: Buffer) => {
-        this.buffer += data.toString();
-        this.processInput();
-      });
+      const proc = this.process;
+      if (proc) {
+        (proc.stdout as NodeJS.WriteStream).on('data', (data: Buffer) => {
+          this.buffer += data.toString();
+          this.processInput();
+        });
 
-      this.process.stderr.on('data', (data: Buffer) => {
-        console.error('MCP Server stderr:', data.toString());
-      });
+        (proc.stderr as NodeJS.WriteStream).on('data', (data: Buffer) => {
+          console.error('MCP Server stderr:', data.toString());
+        });
 
-      this.process.on('error', (err) => {
-        console.error('MCP Server error:', err);
-        this.emit('error', err);
-      });
+        proc.on('error', (err) => {
+          console.error('MCP Server error:', err);
+          this.emit('error', err);
+        });
 
-      this.process.on('close', (code) => {
-        console.log('MCP Server closed with code:', code);
-        this.closed = true;
-      });
+        proc.on('close', (code) => {
+          console.log('MCP Server closed with code:', code);
+          this.closed = true;
+        });
+      }
     } else if (config.transport === 'websocket') {
       // WebSocket implementation would go here
       // For now, we log it's not implemented
@@ -66,10 +69,11 @@ export class MCPClientImpl extends EventEmitter implements MCPClient {
     return new Promise((resolve, reject) => {
       this.pending.set(id, resolve);
 
-      if (this.process) {
+      const proc = this.process;
+      if (proc) {
         // Send as JSON-RPC message
         const msg = JSON.stringify(message) + '\n';
-        this.process.stdin.write(msg);
+        (proc.stdin as NodeJS.WriteStream).write(msg);
       } else {
         // Fallback for testing (mock response)
         setTimeout(() => {

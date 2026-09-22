@@ -30,7 +30,7 @@ function execGit(args: string[], cwd: string, token?: string): string {
 
 async function diff(cwd: string): Promise<Record<string, string>> {
   try {
-    const output = execGit('diff HEAD', cwd);
+    const output = execGit(['diff', 'HEAD'], cwd);
     const lines = output.split('\n');
     const changes: Record<string, string> = {};
     let currentFile: string | null = null;
@@ -62,7 +62,7 @@ export function createGitHubProvider(): GitHubProvider {
       await ensureDir(dir);
       try {
         const url = config.repoUrl.includes('https://') ? config.repoUrl : `https://github.com/${config.repoUrl}`;
-        execGit(`clone ${url} ${dir}`, process.cwd(), config.token);
+        execGit(['clone', url, dir], process.cwd(), config.token);
         return { success: true, changes: { added: [], modified: [], deleted: [] } };
       } catch (e: any) {
         return { success: false, error: e.message };
@@ -72,9 +72,9 @@ export function createGitHubProvider(): GitHubProvider {
     async push(config: GitHubConfig, changes: Record<string, string>): Promise<SyncResult> {
       const dir = config.localPath || './repo';
       try {
-        execGit('add .', dir, config.token);
-        execGit('commit -m "Auto commit"', dir, config.token);
-        execGit('push origin main', dir, config.token);
+        execGit(['add', '.'], dir, config.token);
+        execGit(['commit', '-m', 'Auto commit'], dir, config.token);
+        execGit(['push', 'origin', 'main'], dir, config.token);
         return { success: true, changes: { added: [], modified: Object.keys(changes), deleted: [] } };
       } catch (e: any) {
         return { success: false, error: e.message };
@@ -97,12 +97,12 @@ export function createGitHubProvider(): GitHubProvider {
 
 export async function cloneRepo(url: string, token?: string): Promise<string> {
   const dir = `./repo_${Date.now()}`;
-  execGit(`clone ${url} ${dir}`, process.cwd(), token);
+  execGit(['clone', url, dir], process.cwd(), token);
   return dir;
 }
 
 export async function commitAndPush(dir: string, message = 'Auto commit', token?: string): Promise<void> {
-  execGit('add .', dir, token);
-  execGit(`commit -m "${message}"`, dir, token);
-  execGit('push origin main', dir, token);
+  execGit(['add', '.'], dir, token);
+  execGit(['commit', '-m', message], dir, token);
+  execGit(['push', 'origin', 'main'], dir, token);
 }

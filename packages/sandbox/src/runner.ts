@@ -1,5 +1,5 @@
 import { mkdtemp, rm } from 'node:fs/promises';
-import { spawn } from 'node:child_process';
+import { spawn, ChildProcess } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
@@ -34,6 +34,7 @@ function extOf(file: string): RunLanguage {
 export function resolveInterpreter(lang: RunLanguage): string | Error {
   const a = ADAPTERS[lang];
   if (!a) return new Error(`unknown language: ${lang}`);
+  if (!a.interpreters[0]) return new Error(`no interpreter for: ${lang}`);
   return a.interpreters[0];
 }
 
@@ -111,20 +112,20 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
   let outputBytes = 0;
   const maxBytes = limits.maxOutputBytes;
 
-  child.stdout.on('data', (d: Buffer) => {
+  if (child.stdout) child.stdout.on('data', (d: Buffer) => {
     if (outputBytes >= maxBytes) return;
     const chunk = d.toString();
     stdoutChunks.push(chunk);
     outputBytes += Math.min(d.byteLength, maxBytes - outputBytes);
   });
 
-  child.stderr.on('data', (d: Buffer) => {
+  if (child.stderr) child.stderr.on('data', (d: Buffer) => {
     if (outputBytes >= maxBytes) return;
     stderrChunks.push(d.toString());
   });
 
   const timer = limits.timeoutMs > 0
-    ? setTimeout(() => { timedOut = true; killed = true; try { process.kill(-child.pid, 'SIGKILL'); } catch { child.kill('SIGKILL'); } }, limits.timeoutMs)
+    ? setTimeout(() => { timedOut = true; killed = true; try { process.kill(-child.pid!, 'SIGKILL'); } catch { child.kill('SIGKILL'); } }, limits.timeoutMs)
     : null;
 
   return {
@@ -134,13 +135,11 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
               if (timer) clearTimeout(timer);
         exitCode = code;
               resolve({
-          code: code ?? 1,
-          signal: signal ?? undefined,
-          timedOut,
-          killed,
-          limited: timedOut || killed,
-          outputBytes,
-        });
+        code: code ?? 1,
+        killed,
+        limited: timedOut || killed,
+        outputBytes,
+      });
       });
       child.on('error', (err: Error) => {
             });
@@ -149,17 +148,16 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
       [Symbol.asyncIterator]() {
         let idx = 0;
         return {
-    runId: crypto.randomUUID(),
           async next() {
             if (idx < stdoutChunks.length) {
               const chunk = stdoutChunks[idx++];
-              return chunk.length > 0 ? { value: chunk, done: false } : this.next();
+              return chunk && chunk.length > 0 ? { value: chunk, done: false } : this.next();
             }
             return new Promise((resolve) => {
               const check = () => {
                 if (idx < stdoutChunks.length) {
                   const chunk = stdoutChunks[idx++];
-                  if (chunk.length > 0) resolve({ value: chunk, done: false });
+                  if (chunk && chunk.length > 0) resolve({ value: chunk, done: false });
                   else check();
                 } else if (timedOut || killed || exitCode !== null) resolve({ value: undefined, done: true });
                 else child.once('close', check);
@@ -174,17 +172,16 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
       [Symbol.asyncIterator]() {
         let idx = 0;
         return {
-    runId: crypto.randomUUID(),
           async next() {
             if (idx < stderrChunks.length) {
               const chunk = stderrChunks[idx++];
-              return chunk.length > 0 ? { value: chunk, done: false } : this.next();
+              return chunk && chunk.length > 0 ? { value: chunk, done: false } : this.next();
             }
             return new Promise((resolve) => {
               const check = () => {
                 if (idx < stderrChunks.length) {
                   const chunk = stderrChunks[idx++];
-                  if (chunk.length > 0) resolve({ value: chunk, done: false });
+                  if (chunk && chunk.length > 0) resolve({ value: chunk, done: false });
                   else check();
                 } else if (timedOut || killed || exitCode !== null) resolve({ value: undefined, done: true });
                 else child.once('close', check);
@@ -197,7 +194,7 @@ export function runCode(root: string, request: RunRequest, limits: RunLimits): R
     },
     kill(signal?: NodeJS.Signals) {
       killed = true;
-      try { process.kill(-child.pid, signal ?? 'SIGTERM'); } catch { child.kill(signal ?? 'SIGTERM'); }
+      try { process.kill(-child.pid!, signal ?? 'SIGTERM'); } catch { child.kill(signal ?? 'SIGTERM'); }
     },
   };
 }

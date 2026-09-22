@@ -5,7 +5,7 @@
  * All agent decisions MUST query the experience engine first.
  */
 
-import type { Experience, ExperienceVector, ExperienceStore } from './types.js';
+import type { Experience, ExperienceVector, ExperienceStore } from './experience-types.js';
 
 // ============================================================================
 // CORE ENGINE — ENFORCED CAPTURE & INJECTION
@@ -68,7 +68,9 @@ export class MemoryExperienceStore implements ExperienceStore {
       .sort((a, b) => b.score - a.score)
       .slice(0, topK);
     
-    return scores.map(s => this.experiences.get(s.id)!).filter((x): x is Experience => !!x);
+    return scores
+      .map(s => this.experiences.get(s.id))
+      .filter((x): x is Experience => x !== undefined);
   }
   
   async reflect(taskId: string, success: boolean, details: string): Promise<void> {
@@ -91,7 +93,7 @@ export class MemoryExperienceStore implements ExperienceStore {
   }
   
   private dotProduct(a: number[], b: number[]): number {
-    return a.reduce((sum, _, i) => sum + a[i] * b[i], 0);
+    return a.reduce((sum, _, i) => sum + (a[i] ?? 0) * (b[i] ?? 0), 0);
   }
 }
 

@@ -3,7 +3,7 @@
  */
 
 import type { ExperienceProvider } from '../../core/src/capabilities/experience.js';
-import { MemoryExperienceStore, captureBrowserExperience, injectExperience, reflect } from './experience.js';
+import { MemoryExperienceStore, captureBrowserExperience, injectExperience } from './experience.js';
 
 let store: MemoryExperienceStore | null = null;
 
@@ -34,14 +34,14 @@ export async function captureAction(
 export async function getPriorExperience(task: string, topK = 5): Promise<string[]> {
   const exps = await injectExperience(getStore(), task, topK);
   console.log(`✓ Injected ${exps.length} prior experiences`);
-  return exps;
+  return exps as unknown as string[];
 }
 
 /**
  * ENFORCED: reflect AFTER task completion.
  */
 export async function reflectOnTask(taskId: string, success: boolean, details: string): Promise<void> {
-  await reflect(getStore(), taskId, success, details);
+  await getStore().reflect(taskId, success, details);
   console.log('✓ Reflection complete');
 }
 

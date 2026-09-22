@@ -16,6 +16,8 @@ import type {
 
 let currentSession: BrowserState | null = null;
 let playwright: any = null;
+let mockUrl = 'about:blank';
+let mockTitle = 'New Tab';
 
 // Try to load playwright (optional dependency)
 try {
@@ -24,13 +26,6 @@ try {
   console.warn('⚠️ Playwright not installed. Using mock browser for testing.');
   console.warn('Install with: npx playwright install');
 }
-
-// ============================================================================
-// MOCK FALLBACK (if playwright not installed)
-// ============================================================================
-
-let mockUrl = 'about:blank';
-let mockTitle = 'New Tab';
 
 // ============================================================================
 // PROVIDER IMPLEMENTATION
@@ -53,104 +48,79 @@ export function createBrowserProvider(): BrowserProvider {
         if (config.userAgent) {
           await page.setUserAgent(config.userAgent);
         }
-        currentSession = { sessionId, url: 'about:blank', title: 'New Tab' };
+        currentSession = {
+          sessionId,
+          url: 'about:blank',
+          title: 'New Tab',
+        };
+        // Store page/browser in session for later use
+        (currentSession as any).page = page;
+        (currentSession as any).browser = browser;
         return currentSession;
       } else {
-        // Mock implementation for testing
-        mockUrl = 'about:blank';
-        mockTitle = 'New Tab';
-        currentSession = { sessionId, url: 'about:blank', title: 'New Tab' };
+        // Mock implementation
+        currentSession = {
+          sessionId,
+          url: 'about:blank',
+          title: 'New Tab',
+        };
         return currentSession;
       }
     },
-
+    
     async navigate(url: string): Promise<void> {
       if (playwright && currentSession) {
         // Real Playwright navigation
-        const page = await currentSession.page;
+        const page = (currentSession as any).page;
         await page.goto(url);
         mockUrl = url;
         mockTitle = await page.title();
-        if (currentSession) {
-          currentSession.url = url;
-          currentSession.title = mockTitle;
-        }
+        currentSession.url = url;
+        currentSession.title = mockTitle;
       } else {
-        // Mock
+        // Mock navigation
         mockUrl = url;
-        mockTitle = 'Page';
-        if (currentSession) {
-          currentSession.url = url;
-          currentSession.title = mockTitle;
-        }
+        currentSession = currentSession || { sessionId: 'mock', url: '', title: '' };
+        currentSession.url = url;
+        currentSession.title = `Page: ${url}`;
       }
     },
-
+    
     async screenshot(): Promise<string> {
       if (playwright && currentSession) {
-        const page = await currentSession.page;
-        const buffer = await page.screenshot({ encoding: 'base64' });
-        return buffer;
+        const page = (currentSession as any).page;
+        const screenshot = await page.screenshot({ encoding: 'base64' });
+        return `data:image/png;base64,${screenshot}`;
       } else {
-        // Mock placeholder
-        return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAAYAAAAgZg9AAAAABkRSTlMA8w2z9wAAAB1JREFUCB1jYGBgYGBkYGBgYAAANwAB+Xq03QAAAABJRU5ErkJggg==';
+        // Return placeholder
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmZmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZpbGw9IiM5OTkiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPjNvdXNoPC90ZXh0Pjwvc3ZnPg==';
       }
     },
-
+    
     async mouseMove(x: number, y: number): Promise<void> {
       if (playwright && currentSession) {
-        const page = await currentSession.page;
+        const page = (currentSession as any).page;
         await page.mouse.move(x, y);
       }
-      // Mock: no-op
     },
-
+    
     async click(x: number, y: number): Promise<void> {
       if (playwright && currentSession) {
-        const page = await currentSession.page;
+        const page = (currentSession as any).page;
         await page.mouse.click(x, y);
       }
-      // Mock: no-op
     },
-
+    
     async close(): Promise<void> {
       if (playwright && currentSession) {
-        await currentSession.browser.close();
-        currentSession = null;
-      } else {
-        // Mock
-        currentSession = null;
-        mockUrl = 'about:blank';
-        mockTitle = 'New Tab';
+        const browser = (currentSession as any).browser;
+        if (browser) await browser.close();
       }
+      currentSession = null;
     },
-
+    
     async getState(): Promise<BrowserState | null> {
       return currentSession;
     },
   };
-}
-
-// ============================================================================
-// CONVENIENCE FUNCTIONS
-// ============================================================================
-
-/** Check if playwright is installed */
-export function hasPlaywright(): boolean {
-  return !!playwright;
-}
-
-/** Install playwright if not available */
-export async function ensurePlaywrightInstalled(): Promise<void> {
-  if (!playwright) {
-    console.log('🔧 Installing Playwright...');
-    const { execSync } = require('child_process');
-    execSync('npx playwright install', { stdio: 'inherit' });
-    // Reload
-    try {
-      playwright = require('playwright');
-    } catch (e) {
-      console.error('❌ Failed to install Playwright. Please install manually.');
-    }
-  }
 }
