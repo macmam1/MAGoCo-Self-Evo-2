@@ -385,7 +385,7 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | #50 | merged | 2026-09-22 | dark/light theme switcher |
 | #51 | merged | 2026-09-22 | Mouse tracking + Viewport sync |
 | #52 | merged | 2026-09-22 | Human Assist (HITL) |
-| #53 | in_progress | 2026-09-22 | Skill Capture |
+| #53 | merged | 2026-09-22 | Skill Capture (learn from successful user interactions) |
 | #54 | in_progress | 2026-09-22 | Proxy/Identity Masking |
 | #55 | merged | 2026-09-22 | Experience Engine (capture → embed → retrieve → inject) |
 | #42 | in_progress | 2026-09-22 | AI code generation/review/debug (Phase 3.5) |
