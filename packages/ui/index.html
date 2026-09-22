@@ -171,6 +171,60 @@
     }
     window.addEventListener('mousemove', (e) => sendViewport({ type: 'viewport', x: e.clientX, y: e.clientY }));
     window.addEventListener('scroll', () => sendViewport({ type: 'viewport', scrollY: window.scrollY }));
+
+    // Human-in-the-Loop Task Modal
+    const taskModal = document.createElement('div');
+    taskModal.id = 'human-task-modal';
+    taskModal.style.display = 'none';
+    taskModal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:1000;max-width:400px;width:90%;border:1px solid #ccc';
+    taskModal.innerHTML = '<h3>Human Assist Required</h3><p id="task-prompt"></p><input id="task-input" style="width:100%;margin:10px 0"/><div id="task-actions"></div>';
+    document.body.appendChild(taskModal);
+
+    function showHumanTask(task) {
+      taskModal.style.display = 'block';
+      document.getElementById('task-prompt').textContent = task.task.prompt;
+      const actions = document.getElementById('task-actions');
+      actions.innerHTML = '';
+      const approve = document.createElement('button');
+      approve.textContent = 'Approve';
+      approve.onclick = () => {
+        const input = document.getElementById('task-input') as HTMLInputElement;
+        sendHumanResult(task.task.id, 'approved', { input: input.value });
+      };
+      const deny = document.createElement('button');
+      deny.textContent = 'Deny';
+      deny.style.marginLeft = '10px';
+      deny.onclick = () => {
+        sendHumanResult(task.task.id, 'denied');
+      };
+      actions.appendChild(approve);
+      actions.appendChild(deny);
+    }
+
+    function sendHumanResult(taskId, status, data) {
+      taskModal.style.display = 'none';
+      const payload = { type: 'human/result', task_id: taskId, status, data };
+      const json = JSON.stringify(payload);
+      const enc = new TextEncoder().encode(json);
+      const mask = new Uint8Array([0x12, 0x34, 0x56, 0x78]);
+      const masked = new Uint8Array(enc.length);
+      for (let i = 0; i < enc.length; i++) masked[i] = enc[i] ^ mask[i % 4];
+      const header = new Uint8Array([0x81, 0x80 | enc.length]);
+      ws.send(Buffer.from([...header, ...mask, ...masked]));
+    }
+
+    ws.onmessage = (e) => {
+      if (typeof e.data !== 'string') return;
+      const frame = JSON.parse(e.data);
+      if (frame.kind === 'text') {
+        const msg = JSON.parse(frame.text);
+        if (msg.type === 'human/task') {
+          showHumanTask(msg);
+        } else {
+          console.log('Agent:', msg);
+        }
+      }
+    };
   </script>
 </body>
 </html>

@@ -17,6 +17,28 @@ import { isFsCommand } from '../../sandbox/src/fs-protocol.js';
 import { upgradeWebSocket, type WireFrame } from './ws.js';
 import { isTransformable, transformFile } from './transform.js';
 
+interface HumanTask {
+  type: 'human/task';
+  task: {
+    id: string;
+    kind: 'captcha' | 'approval' | 'correction';
+    prompt: string;
+    payload?: any;
+    timeout: number;
+  };
+}
+
+interface HumanResult {
+  type: 'human/result';
+  task_id: string;
+  status: 'approved' | 'denied' | 'correction';
+  data?: any;
+}
+
+function isHumanCommand(x: unknown): x is HumanTask {
+  return (x as any)?.type === 'human/task';
+}
+
 export interface ServeOptions {
   /** Directory served at `/`. Defaults to ../ui/dist. */
   readonly staticDir: string;
@@ -31,6 +53,11 @@ export interface ServeOptions {
   readonly onFsCommand?: (
     cmd: FsCommand,
     reply: (f: FsFrame) => void,
+  ) => void;
+  /** Handles a human task request from the client. */
+  readonly onHumanTask?: (
+    task: HumanTask,
+    reply: (f: ClientFrame) => void,
   ) => void;
   /** Handles a run request (POST /api/run). */
   readonly onRunCommand?: (
@@ -205,6 +232,10 @@ export function serve(opts: ServeOptions): Promise<ServeHandle> {
           // before the chat one so the two never see each other's frames.
           if (isFsCommand(parsed)) {
             opts.onFsCommand?.(parsed as FsCommand, fsReply);
+            return;
+          }
+          if (isHumanCommand(parsed)) {
+            opts.onHumanTask?.(parsed as HumanTask, reply);
             return;
           }
           if (!isClientCommand(parsed)) {
