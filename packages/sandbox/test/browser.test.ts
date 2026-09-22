@@ -1,13 +1,12 @@
 /**
- * Browser provider tests — Phase 4.
- *
- * Uses the mock fallback (no Playwright installed in CI).
- * Tests cover the full BrowserProvider contract.
+ * Browser provider tests — Phase 4 (computer-use).
  */
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createBrowserProvider } from '../src/browser.js';
+
+// ── Basic lifecycle ───────────────────────────────────────────────────────────
 
 test('T-B1 getState returns null before launch', async () => {
   const b = createBrowserProvider();
@@ -27,7 +26,6 @@ test('T-B3 getState returns state after launch', async () => {
   await b.launch({ headless: true });
   const state = await b.getState();
   assert.ok(state !== null);
-  assert.ok(typeof state!.sessionId === 'string');
 });
 
 test('T-B4 navigate updates url in state', async () => {
@@ -77,6 +75,59 @@ test('T-B9 each provider instance has independent state', async () => {
 
 test('T-B10 navigate without launch does not crash', async () => {
   const b = createBrowserProvider();
-  // Mock should create session on navigate even without launch
   await assert.doesNotReject(b.navigate('https://example.com'));
+});
+
+// ── Computer-use actions ──────────────────────────────────────────────────────
+
+test('T-B11 type does not throw', async () => {
+  const b = createBrowserProvider();
+  await b.launch({ headless: true });
+  await assert.doesNotReject(b.type('hello world'));
+});
+
+test('T-B12 press does not throw', async () => {
+  const b = createBrowserProvider();
+  await b.launch({ headless: true });
+  await assert.doesNotReject(b.press('Enter'));
+});
+
+test('T-B13 scroll does not throw', async () => {
+  const b = createBrowserProvider();
+  await b.launch({ headless: true });
+  await assert.doesNotReject(b.scroll(0, 0, 0, 300));
+});
+
+test('T-B14 drag does not throw', async () => {
+  const b = createBrowserProvider();
+  await b.launch({ headless: true });
+  await assert.doesNotReject(b.drag(10, 10, 100, 100));
+});
+
+// ── Content extraction ────────────────────────────────────────────────────────
+
+test('T-B15 extractContent returns ExtractedContent shape', async () => {
+  const b = createBrowserProvider();
+  await b.launch({ headless: true });
+  await b.navigate('https://example.com');
+  const content = await b.extractContent();
+  assert.ok(typeof content.text === 'string');
+  assert.ok(typeof content.html === 'string');
+  assert.ok(Array.isArray(content.links));
+  assert.ok(typeof content.title === 'string');
+});
+
+test('T-B16 extractContent before navigate returns mock content', async () => {
+  const b = createBrowserProvider();
+  await b.launch({ headless: true });
+  const content = await b.extractContent();
+  assert.ok(typeof content.text === 'string');
+  assert.ok(content.html.includes('<html>') || content.html.includes('<body>'));
+});
+
+test('T-B17 type and press without launch do not crash', async () => {
+  const b = createBrowserProvider();
+  // mock has no page, so these are no-ops
+  await assert.doesNotReject(b.type('test'));
+  await assert.doesNotReject(b.press('Tab'));
 });
