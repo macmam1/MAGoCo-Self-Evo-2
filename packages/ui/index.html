@@ -1,27 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>MAGoCo - Phase 3 Demo</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; }
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+      --border: #cccccc;
+      --panel: #f5f5f5;
+      --code-bg: #f0f0f0;
+      --code-text: #000000;
+    }
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background: var(--bg);
+      color: var(--text);
+    }
     .main { display: flex; gap: 20px; }
     .editor-pane { flex: 1; min-width: 400px; }
     .exec-pane { flex: 1; min-width: 300px; }
     .terminal-pane { flex: 1; min-width: 300px; }
     .toolbar { margin-bottom: 10px; }
     .toolbar select, .toolbar button { padding: 5px 10px; margin-right: 5px; }
-    #editor-container { height: 400px; border: 1px solid #ccc; }
-    .output { background: #1e1e1e; color: #d4d4d4; padding: 10px; min-height: 100px; }
+    #editor-container { height: 400px; border: 1px solid var(--border); }
+    .output { background: var(--panel); padding: 10px; min-height: 100px; border: 1px solid var(--border); }
     .terminal-output { background: #000; color: #0f0; padding: 10px; min-height: 100px; font-family: monospace; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .controls { display: flex; gap: 10px; }
   </style>
 </head>
 <body>
-  <h1>MAGoCo - Phase 3 Demo</h1>
+  <div class="header">
+    <h1>MAGoCo - Phase 3 Demo</h1>
+    <div class="controls">
+      <select id="lang-select">
+        <option value="en">English</option>
+        <option value="fa">فارسی</option>
+      </select>
+      <button id="theme-btn">Dark</button>
+    </div>
+  </div>
   <div class="main">
     <div class="editor-pane">
-      <h2>Editor</h2>
+      <h2 id="editor-title">Editor</h2>
       <div class="toolbar">
-        <select id="lang-select">
+        <select id="lang-select-editor">
           <option value="js">JavaScript</option>
           <option value="py">Python</option>
         </select>
@@ -31,62 +56,81 @@
       <div id="editor-container"></div>
     </div>
     <div class="exec-pane">
-      <h2>Execution</h2>
+      <h2 id="exec-title">Execution</h2>
       <div class="output" id="exec-output">No execution yet</div>
     </div>
     <div class="terminal-pane">
-      <h2>Terminal</h2>
+      <h2 id="term-title">Terminal</h2>
       <button id="term-connect">Connect</button>
       <div class="terminal-output" id="term-output">Disconnected</div>
     </div>
   </div>
   <script type="module">
+    // Theme init
+    const themeBtn = document.getElementById('theme-btn');
+    themeBtn.onclick = () => {
+      const current = document.documentElement.style.getPropertyValue('--bg');
+      const next = current.includes('ffffff') ? 'dark' : 'light';
+      document.documentElement.style.setProperty('--bg', next === 'dark' ? '#121212' : '#ffffff');
+      document.documentElement.style.setProperty('--text', next === 'dark' ? '#e0e0e0' : '#000000');
+      document.documentElement.style.setProperty('--border', next === 'dark' ? '#333333' : '#cccccc');
+      document.documentElement.style.setProperty('--panel', next === 'dark' ? '#1e1e1e' : '#f5f5f5');
+      themeBtn.textContent = next === 'dark' ? 'Dark' : 'Light';
+      localStorage.setItem('theme', next);
+    };
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') themeBtn.click();
+
+    // i18n init
     const langSelect = document.getElementById('lang-select');
-    const saveBtn = document.getElementById('save-btn');
+    const setLang = (code) => {
+      document.body.dir = code === 'fa' ? 'rtl' : 'ltr';
+      const labels = {
+        'editor-title': code === 'fa' ? 'ویرایشگر' : 'Editor',
+        'exec-title': code === 'fa' ? 'اجرا' : 'Execution',
+        'term-title': code === 'fa' ? 'ترمینال' : 'Terminal',
+        'run-btn': code === 'fa' ? 'اجرا' : 'Run',
+        'save-btn': code === 'fa' ? 'ذخیره' : 'Save',
+        'term-connect': code === 'fa' ? 'اتصال' : 'Connect',
+      };
+      Object.entries(labels).forEach(([id, text]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      });
+      localStorage.setItem('lang', code);
+    };
+    setLang(localStorage.getItem('lang') || 'en');
+    langSelect.value = localStorage.getItem('lang') || 'en';
+    langSelect.onchange = () => setLang(langSelect.value);
+
+    // Editor
     const runBtn = document.getElementById('run-btn');
     const execOutput = document.getElementById('exec-output');
-    const termOutput = document.getElementById('term-output');
-    const termConnect = document.getElementById('term-connect');
-
     let editor;
-    let state = { content: 'console.log("Hello");', language: 'js', modified: false };
-
-    // Try Monaco, fallback to textarea
     try {
       await import('https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js');
       window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
       await new Promise(r => window.require(['vs/editor/editor.main'], r));
-
-      const monaco = window.monaco;
-      editor = monaco.editor.create(document.getElementById('editor-container'), {
-        value: state.content,
-        language: state.language === 'js' ? 'javascript' : 'python',
+      editor = window.monaco.editor.create(document.getElementById('editor-container'), {
+        value: 'console.log("Hello");',
+        language: 'javascript',
         theme: 'vs-dark',
         automaticLayout: true,
       });
-
-      editor.onDidChangeModelContent(() => {
-        state.content = editor.getValue();
-        state.modified = true;
-      });
     } catch {
-      // Fallback
       const ta = document.createElement('textarea');
-      ta.value = state.content;
+      ta.value = 'console.log("Hello");';
       ta.style.cssText = 'width:100%;height:400px;font-family:monospace';
       document.getElementById('editor-container').appendChild(ta);
-      ta.oninput = () => { state.content = ta.value; state.modified = true; };
-      ta.onchange = () => { state.language = langSelect.value; };
     }
 
-    // Run button
     runBtn.onclick = async () => {
       execOutput.textContent = 'Running...';
       try {
         const res = await fetch('/api/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ source: state.content, language: state.language }),
+          body: JSON.stringify({ source: editor ? editor.getValue() : ta.value, language: 'js' }),
         });
         const data = await res.json();
         execOutput.textContent = `Exit: ${data.code}\nstdout: ${data.stdout}\nstderr: ${data.stderr}`;
@@ -95,12 +139,13 @@
       }
     };
 
-    // Terminal connect
+    // Terminal
+    const termConnect = document.getElementById('term-connect');
+    const termOutput = document.getElementById('term-output');
     termConnect.onclick = () => {
       const ws = new WebSocket(`ws://${location.host}/terminal`);
       ws.onopen = () => { termOutput.textContent = 'Connected\n'; termConnect.disabled = true; };
       ws.onmessage = (e) => { termOutput.textContent += e.data; };
-      ws.onerror = () => { termOutput.textContent += 'Error\n'; };
       ws.onclose = () => { termOutput.textContent += 'Disconnected\n'; };
     };
   </script>
