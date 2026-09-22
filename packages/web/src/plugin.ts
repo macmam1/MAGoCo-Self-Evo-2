@@ -45,11 +45,12 @@ import {
   type LlmResponse,
 } from '@magoco/agents';
 import { FS_CAPABILITY, type FileSystemCapability, type RunHandle, EDIT_CAPABILITY, editDef, AI_CODE_CAPABILITY, aiCodeDef, type AIProvider, VIEWPORT_CAPABILITY, viewportDef, HUMAN_ASSIST_CAPABILITY, humanDef, type HumanProvider, EXPERIENCE_CAPABILITY, experienceDef, SKILL_CAPTURE_CAPABILITY, skillCaptureDef, FIXER_CAPABILITY, fixerDef, MCP_CAPABILITY, mcpDef, GITHUB_CAPABILITY, githubDef, PROXY_CAPABILITY, proxyDef, BROWSER_CAPABILITY, browserDef, PREVIEW_CAPABILITY, previewDef } from '@magoco/core';
-import { TERMINAL_CAPABILITY, termDef, RUN_CAPABILITY, runDef, type TermRequest } from '../../core/src/capabilities/terminal.js';
+import { TERMINAL_CAPABILITY, termDef, HEALTH_CAPABILITY, healthDef, RUN_CAPABILITY, runDef, type TermRequest } from '../../core/src/capabilities/terminal.js';
 import type { FsCommand, FsFrame } from '../../sandbox/src/fs-protocol.js';
 import { isFsCommand } from '../../sandbox/src/fs-protocol.js';
 import { createTermProvider } from '../../sandbox/src/terminal.js';
 import { createRunProvider } from '../../sandbox/src/run.js';
+import { createHealthProvider } from '../../sandbox/src/health.js';
 import { createEditProvider } from '../../sandbox/src/edit.js';
 import { createAIProvider } from '../../sandbox/src/ai-code.js';
 import { createBrowserProvider } from '../../sandbox/src/browser.js';
@@ -87,6 +88,8 @@ export function register(ctx: PluginRegisterContext): void {
   ctx.registry.provide(TERMINAL_CAPABILITY, 'web', termProvider);
   const runProvider = createRunProvider();
   ctx.registry.provide(RUN_CAPABILITY, 'web', runProvider);
+  const healthProvider = createHealthProvider();
+  ctx.registry.provide(HEALTH_CAPABILITY, 'web', healthProvider);
   const editProvider = createEditProvider();
   ctx.registry.provide(EDIT_CAPABILITY, 'sandbox', editProvider);
   const browserProvider = createBrowserProvider();
