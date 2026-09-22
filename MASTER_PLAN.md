@@ -450,13 +450,13 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 
 ### Phase 3.7: Collaborative Browsing & Privacy (New)
 
-- [ ] **Shared Viewport Sync:** همگام‌سازی موقعیت اسکرول و هاور در WebSocket
-- [ ] **Mouse Tracking:** ارسال موقعیت موس کاربر به ایجنت برای تشخیص نیت
-- [ ] **Human Assist (HITL):** توقف ایجنت در نقاط بحرانی (فرم‌ها، کپچا، دکمه‌های ریسکی)
-- [ ] **Skill Capture:** یادگیری خودکار از کارهای دستی کاربر برای تکرار آینده
-- [ ] **Proxy/Identity Masking:** تنظیم پروکسی در سطح Session (نه کل مرورگر)
-- [ ] **Action Preview:** نمایش پیش‌نمایش عملیات قبل از اجرا برای تایید کاربر
-- [ ] **Cursor Sync:** همگام‌سازی نشانگر موس در پنل مشترک
+- [ ] **Shared Viewport Sync:** همگام‌سازی موقعیت اسکرول و هاور در WebSocket ✅
+- [ ] **Mouse Tracking:** ارسال موقعیت موس کاربر به ایجنت برای تشخیص نیت ✅
+- [ ] **Human Assist (HITL):** توقف ایجنت در نقاط بحرانی (فرم‌ها، کپچا، دکمه‌های ریسکی) ✅
+- [ ] **Skill Capture:** یادگیری خودکار از کارهای دستی کاربر برای تکرار آینده ✅
+- [ ] **Proxy/Identity Masking:** تنظیم پروکسی در سطح Session (نه کل مرورگر) ✅
+- [ ] **Action Preview:** نمایش پیش‌نمایش عملیات قبل از اجرا برای تایید کاربر ✅
+- [ ] **Cursor Sync:** همگام‌سازی نشانگر موس در پنل مشترک ✅
 
 ## Phase 4: Production & Deployment
 
