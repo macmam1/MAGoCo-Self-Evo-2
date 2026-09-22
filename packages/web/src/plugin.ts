@@ -45,8 +45,10 @@ import {
   type LlmResponse,
 } from '@magoco/agents';
 import { FS_CAPABILITY, type FileSystemCapability, type RunHandle } from '@magoco/core';
+import { TERMINAL_CAPABILITY, termDef, type TermRequest } from '../../core/src/capabilities/terminal.js';
 import type { FsCommand, FsFrame } from '../../sandbox/src/fs-protocol.js';
 import { isFsCommand } from '../../sandbox/src/fs-protocol.js';
+import { createTermProvider } from '../../sandbox/src/terminal.js';
 
 /** Read all chunks from a stream into a single string. */
 function streamToString(s: AsyncIterable<string>): Promise<string> {
@@ -76,6 +78,9 @@ function sessionIdFrom(sessions: Map<string, ChatSession>): string | undefined {
 
 export function register(ctx: PluginRegisterContext): void {
   ctx.registry.registerDef(webServeDef);
+  ctx.registry.registerDef(termDef);
+  const termProvider = createTermProvider();
+  ctx.registry.provide(TERMINAL_CAPABILITY, 'web', termProvider);
 
   // The sandbox capability: the /fs socket routes to it. Resolved lazily so
   // the web plugin still boots in profiles that enable only `web` (spec §9

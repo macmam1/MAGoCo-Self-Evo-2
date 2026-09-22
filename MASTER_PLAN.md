@@ -376,8 +376,9 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 | PR | وضعیت | تاریخچه | توضیحات |
 |---|---|---|---|
 | #35 | merged | 2026-09-22 | Monaco editor + textarea fallback (no-build) |
-| #38 | in_progress | 2026-09-22 | Run button + output streaming UI |
+| #38 | merged | 2026-09-22 | Run button + output streaming UI |
 | #39 | merged | 2026-09-22 | `magoco.code.run` + tier-1 sandbox + limits (91% tests) |
+| #37 | in_progress | 2026-09-22 | Terminal capability + WebSocket + xterm UI |
 
 **جزییات PR #39 (در دست ساخت):**
 
@@ -399,7 +400,17 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 
 ---
 
-### PR #38 - Execution UI (در دست ساخت)
+### PR #37 - Terminal (در دست ساخت)
+
+- **core/capabilities/terminal.ts:** Capability definition
+- **sandbox/terminal.ts:** Terminal provider (Node child_process)
+- **web/plugin.ts:** Register terminal provider
+- **ui/views/terminal.ts:** Terminal UI
+- **TODO:** Wire WebSocket /terminal endpoint
+
+---
+
+### PR #38 - Execution UI (merged)
 
 - **http.ts:** Added POST `/api/run` endpoint
 - **plugin.ts:** Wired to `magoco.code.run` capability
