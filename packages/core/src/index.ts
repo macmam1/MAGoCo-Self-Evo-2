@@ -48,6 +48,7 @@ export type {
   RunRequest,
 } from './capabilities/code.js';
 export { EDIT_CAPABILITY, editDef, type EditProvider } from './capabilities/edit.js';
+export { AI_CODE_CAPABILITY, aiCodeDef, type AIProvider } from './capabilities/ai-code.js';
 export type {
   EditFile,
   EditRequest,
