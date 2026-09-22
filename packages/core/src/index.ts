@@ -53,6 +53,7 @@ export { VIEWPORT_CAPABILITY, viewportDef, type ViewportProvider } from './capab
 export { HUMAN_ASSIST_CAPABILITY, humanDef, type HumanProvider } from './capabilities/human-assist.js';
 export { EXPERIENCE_CAPABILITY, experienceDef, type ExperienceProvider } from './capabilities/experience.js';
 export { SKILL_CAPTURE_CAPABILITY, skillCaptureDef, type SkillProvider } from './capabilities/skill-capture.js';
+export { FIXER_CAPABILITY, fixerDef, type FixerProvider } from './capabilities/fixer.js';
 export type {
   EditFile,
   EditRequest,
