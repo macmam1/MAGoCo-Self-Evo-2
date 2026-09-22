@@ -401,9 +401,10 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 
 ### PR #38 - Execution UI (در دست ساخت)
 
+- **http.ts:** Added POST `/api/run` endpoint
+- **plugin.ts:** Wired to `magoco.code.run` capability
 - **views/execution.ts:** Run button + output panel
-- **Integration:** `/api/run` endpoint (pending)
-- **TODO:** Wire to `magoco.code.run` capability via websocket
+- **TODO:** Wire UI execution view to endpoint
 
 ---
 
