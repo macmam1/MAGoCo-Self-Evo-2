@@ -1,8 +1,9 @@
 {
   "name": "magoco",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "MAGoCo-Self-Evo-2 — standalone multi-agent framework with self-evolution",
+  "author": "MRH-DevLoop",
   "license": "MIT",
   "packageManager": "pnpm@12.5.1",
   "scripts": {
