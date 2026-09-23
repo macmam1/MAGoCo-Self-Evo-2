@@ -1,0 +1,25 @@
+name: HF Space Profile
+version: 1.0.0
+
+target:
+  type: huggingface_space
+  space_id: user/magoco-space
+  sdk: docker
+
+build:
+  image: python:3.11-slim
+  dependencies:
+    - -r requirements.txt
+    - gradio
+
+runtime:
+  resources:
+    cpu: 4
+    memory: 16
+  secrets:
+    - HF_TOKEN
+    - MODELSCOPE_TOKEN
+
+healthcheck:
+  endpoint: /api/health
+  timeout: 30s

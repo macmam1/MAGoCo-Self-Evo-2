@@ -1,0 +1,25 @@
+name: ModelScope Profile
+version: 1.0.0
+
+target:
+  type: modelscope_studio
+  studio_name: user/magoco-studio
+  sdk: docker
+
+build:
+  image: python:3.11-slim
+  dependencies:
+    - -r requirements.txt
+    - modelscope
+
+runtime:
+  resources:
+    cpu: 4
+    memory: 16
+  secrets:
+    - MODELSCOPE_TOKEN
+    - HF_TOKEN
+
+healthcheck:
+  endpoint: /api/health
+  timeout: 30s
