@@ -485,4 +485,5 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 - **Phase 11 (چندکاربره و همکاری):** ✅ ۱۰۰٪ کامل — Multi-tenant Workspaces, RBAC, Team Management, Immutable Audit Log (12 tests)
 - **Phase 12 (آنالیتیکس و مانیتورینگ):** ✅ ۱۰۰٪ کامل — Usage & Costs, Performance Metrics & Charts, Distributed Tracing, Error Tracking, Alerting Rules, Quotas (16 tests)
 - **Phase 13 (بازارچه / Marketplace):** ✅ ۱۰۰٪ کامل — Discover, Search, Download/Package, Ratings, One-Click Install (12 tests)
-- مرحله بعد: Phase 14 — دیپلوی چندپلتفرمی (Desktop/Tauri, Profiles, Backup & Migration)
+- **Phase 14 (دیپلوی چندپلتفرمی):** ✅ ۱۰۰٪ کامل — Desktop (Tauri), Cloud Profiles (HF/ModelScope), Backup & Migration (8 tests)
+- فازهای اصلی پایدار (۳ تا ۱۴) کامل شدند: ۵۵۲ تست سبز
