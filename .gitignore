@@ -1,36 +1,12 @@
-# Dependencies
 node_modules/
-__pycache__/
-*.pyc
-.venv/
-venv/
 dist/
 build/
-*.tsbuildinfo
-
-# Environment & secrets
 .env
 .env.local
-.env.*.local
-
-# Data
-*.sqlite
-*.db
-data/
-logs/
-
-# Editors & OS
-.idea/
-.vscode/
 .DS_Store
-Thumbs.db
-
-# pnpm
-.pnpm-store/
-
-# Runtime data
-.magoco/
-
-# Test & coverage
+*.log
 coverage/
-.nyc_output/
+.vscode/
+.idea/
+*.swp
+*.swo
