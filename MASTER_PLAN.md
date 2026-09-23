@@ -480,5 +480,9 @@ desktop (Tauri) + HF Space/ModelScope profile + CI/CD + backup + migration.
 - Phase 5 (Workflow): ✅ ۱۰۰٪ کامل — DAG engine, triggers, runner, builder, serializer, sub-workflow (289 tests)
 - Phase 6 (Auto-generation): ✅ ۱۰۰٪ کامل — pipeline, team, milestone, SOP (336 tests)
 - Phase 7 (RAG/Knowledge): ✅ ۱۰۰٪ کامل — chunker, vector-store, pipeline, KB, hybrid search (396/396 tests)
-- **Phase 8 (خودتکامل):** ✅ ۱۰۰٪ کامل — rollback, experience engine, skill capture, auto-skill-gen, self-healing (432/432 tests)
-- مرحله بعد: Phase 9 — ادغام‌ها و MCP
+- **Phase 9 (ادغام‌ها و MCP):** ✅ ۱۰۰٪ کامل — webhook, oauth, storage backends, connectors (48 tests)
+- **Phase 10 (امنیت و احراز هویت):** ✅ ۱۰۰٪ کامل — JWT, TOTP 2FA, Secret Store, Rate Limiting, Session Management (12 tests)
+- **Phase 11 (چندکاربره و همکاری):** ✅ ۱۰۰٪ کامل — Multi-tenant Workspaces, RBAC, Team Management, Immutable Audit Log (12 tests)
+- **Phase 12 (آنالیتیکس و مانیتورینگ):** ✅ ۱۰۰٪ کامل — Usage & Costs, Performance Metrics & Charts, Distributed Tracing, Error Tracking, Alerting Rules, Quotas (16 tests)
+- **Phase 13 (بازارچه / Marketplace):** ✅ ۱۰۰٪ کامل — Discover, Search, Download/Package, Ratings, One-Click Install (12 tests)
+- مرحله بعد: Phase 14 — دیپلوی چندپلتفرمی (Desktop/Tauri, Profiles, Backup & Migration)
