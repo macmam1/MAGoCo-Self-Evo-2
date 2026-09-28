@@ -921,6 +921,25 @@ Source: https://cometbrowserai.com / https://github.com/perplexity-ai/comet (con
 
 ---
 
+
+---
+
+# فاز ۸: Core Backend (Plugin System, Memory, Auth, Secret Store) - Critical Phase
+| زیرسیستم | وضعیت | وضعیت |
+|---|---|---|
+| **Plugin System Types** | ✅ پیاده‌سازی شد | PluginManifest, PluginModule, PluginContext |
+| **Memory Store** | ✅ پیاده‌سازی شد | shortterm, longterm, knowledge storage |
+| **Auth System** | ✅ پیاده‌سازی شد | OAuth, API key, SSO support |
+| **Secret Store** | ✅ پیاده‌سازی شد | AES-256-GCM encrypted credential storage |
+| **Build** | ✅ تست شد | پکیج‌ها بدون خطا کامپایل شدند |
+
+**ویژگی‌های پیاده‌سازی‌شده:**
+*   **Plugin System:** Load/validate/unload plugins dynamically
+*   **Memory Store:** 3-tier memory (shortterm, longterm, knowledge) with automatic pruning
+*   **Auth System:** Support for OAuth, API keys, SSO authentication
+*   **Secret Store:** Encrypted credential storage (AES-256-GCM)
+*   **Build:** ۵۵۲ tests passing ✅
+
 # فاز ۷: MCP Integration + Profile/Patch YAML (Features N, O)
 ---
 
