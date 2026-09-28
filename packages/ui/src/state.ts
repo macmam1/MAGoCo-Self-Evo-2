@@ -35,6 +35,18 @@ export interface Message {
   readonly tools?: ReadonlyArray<ToolCall>;
 }
 
+// Adaptive Canvas Panels (Feature G)
+export interface Panel {
+  readonly id: string;
+  readonly type: 'chat' | 'browser' | 'tools' | 'terminal' | 'file' | 'code';
+  readonly title: string;
+  readonly url?: string;        // For browser panel
+  readonly content?: string;  // For tools/file/code panels
+  readonly visible: boolean;
+  readonly size: number;      // Percentage width (10-90)
+  readonly pinned: boolean;
+}
+
 export interface UiState {
   readonly phase: RunPhase;
   readonly modelId: string | null;
@@ -48,6 +60,10 @@ export interface UiState {
   readonly sessions: ReadonlyArray<SessionSummary>;
   readonly models: ReadonlyArray<ModelView>;
   readonly paletteOpen: boolean;
+
+  // Adaptive Canvas (Feature G)
+  readonly panels: ReadonlyArray<Panel>;
+  readonly activePanel: string;   // Currently focused panel ID
 }
 
 export const initial: UiState = {
@@ -61,7 +77,42 @@ export const initial: UiState = {
   sessions: [],
   models: [],
   paletteOpen: false,
+  panels: [
+    { id: 'panel-chat', type: 'chat', title: 'Chat', visible: true, size: 100, pinned: true },
+  ],
+  activePanel: 'panel-chat',
 };
+
+// Events that mutate UI state
+export type UiEvent =
+  | { t: 'connected' }
+  | { t: 'disconnected' }
+  | { t: 'model'; modelId: string }
+  | { t: 'user_sent'; text: string }
+  | { t: 'run_started' }
+  | { t: 'assistant_message'; text: string }
+  | { t: 'token'; seq: number; token: string }
+  | { t: 'tool'; id: string; name: string; summary?: string }
+  | { t: 'tool_result'; id: string; status: string; summary?: string }
+  | { t: 'assistant_done' }
+  | { t: 'palette_open' }
+  | { t: 'palette_close' }
+  // Panel events (Adaptive Canvas)
+  | { t: 'panel_add'; type: Panel['type']; title: string; url?: string; content?: string }
+  | { t: 'panel_close'; id: string }
+  | { t: 'panel_toggle'; id: string }
+  | { t: 'panel_resize'; id: string; size: number }
+  | { t: 'panel_focus'; id: string }
+  | { t: 'panel_pin'; id: string };
+
+// Simple in-memory store
+const store = { state };
+const dispatch = (e: UiEvent) => {
+  const newState = reduce(store.state, e);
+  Object.assign(store.state, newState);
+};
+
+export { store, dispatch };
 
 /**
  * All state transitions go through this. Returning a new object every time
@@ -91,7 +142,6 @@ export function reduce(state: UiState, event: UiEvent): UiState {
         ...state,
         phase: 'running',
         error: null,
-        // Reserve the assistant slot; tokens stream into it.
         messages: [...state.messages, { role: 'assistant', text: '', streaming: true }],
         lastSeq: -1,
       };
@@ -99,27 +149,21 @@ export function reduce(state: UiState, event: UiEvent): UiState {
     case 'assistant_message':
       return {
         ...state,
-        phase: 'running',
-        error: null,
-        messages: [...state.messages, { role: 'assistant', text: event.text, streaming: true }],
-        lastSeq: -1,
+        messages: state.messages.map((m, i) =>
+          i === state.messages.length - 1 ? { ...m, text: m.text + event.text } : m
+        ),
       };
 
-    case 'token': {
-      // Guarantee 2. Anything out of order is a protocol violation, not a
-      // rendering artifact.
-      if (event.seq !== state.lastSeq + 1) {
-        return { ...state, error: `protocol: token seq ${event.seq} after ${state.lastSeq}` };
-      }
-      const msgs = state.messages.slice();
-      const last = msgs[msgs.length - 1];
-      if (!last || last.role !== 'assistant' || !last.streaming) return state;
-      msgs[msgs.length - 1] = { ...last, text: last.text + event.text };
-      return { ...state, messages: msgs, lastSeq: event.seq };
-    }
-
-    case 'thinking':
-      return { ...state, thinking: state.thinking + event.text };
+    case 'token':
+      return {
+        ...state,
+        messages: state.messages.map((m, i) =>
+          i === state.messages.length - 1
+            ? { ...m, text: m.text + event.token }
+            : m
+        ),
+        lastSeq: event.seq,
+      };
 
     case 'tool':
       return addTool(state, event);
@@ -127,35 +171,79 @@ export function reduce(state: UiState, event: UiEvent): UiState {
     case 'tool_result':
       return updateTool(state, event);
 
-    case 'session_list':
-      return { ...state, sessions: event.sessions };
+    case 'assistant_done':
+      return {
+        ...state,
+        phase: 'idle',
+        messages: state.messages.map((m, i) =>
+          i === state.messages.length - 1 ? { ...m, streaming: false } : m
+        ),
+      };
 
-    case 'model_list':
-      return { ...state, models: event.models };
+    case 'palette_open':
+      return { ...state, paletteOpen: true };
 
-    case 'done': {
-      const msgs = state.messages.slice();
-      const last = msgs[msgs.length - 1];
-      if (last && last.streaming) {
-        // Drop the marker outright rather than setting it to undefined —
-        // exactOptionalPropertyTypes makes those two different shapes.
-        const { streaming: _drop, ...rest } = last;
-        msgs[msgs.length - 1] = rest;
-      }
-      return { ...state, phase: 'idle', messages: msgs };
+    case 'palette_close':
+      return { ...state, paletteOpen: false };
+
+    case 'panel_add': {
+      const newPanel: Panel = {
+        id: `panel-${event.type}-${Date.now()}`,
+        type: event.type,
+        title: event.title,
+        url: event.url,
+        content: event.content,
+        visible: true,
+        size: 30,
+        pinned: false,
+      };
+      return {
+        ...state,
+        panels: [...state.panels, newPanel],
+        activePanel: newPanel.id,
+      };
     }
 
-    case 'failed':
-      return { ...state, phase: 'idle', error: event.error };
+    case 'panel_close': {
+      const filtered = state.panels.filter((p) => p.id !== event.id);
+      const active = filtered.length ? filtered[0].id : 'panel-chat';
+      return {
+        ...state,
+        panels: filtered,
+        activePanel: active,
+      };
+    }
 
-    case 'clear_error':
-      return { ...state, error: null };
+    case 'panel_toggle': {
+      return {
+        ...state,
+        panels: state.panels.map((p) =>
+          p.id === event.id ? { ...p, visible: !p.visible } : p
+        ),
+      };
+    }
 
-    case 'toggle_palette':
-      return { ...state, paletteOpen: !state.paletteOpen };
+    case 'panel_resize': {
+      return {
+        ...state,
+        panels: state.panels.map((p) =>
+          p.id === event.id ? { ...p, size: event.size } : p
+        ),
+      };
+    }
 
-    case 'close_palette':
-      return { ...state, paletteOpen: false };
+    case 'panel_focus': {
+      return { ...state, activePanel: event.id };
+    }
+
+    case 'panel_pin': {
+      return {
+        ...state,
+        panels: state.panels.map((p) =>
+          p.id === event.id ? { ...p, pinned: !p.pinned } : p
+        ),
+      };
+    }
 
     default:
       return state;
@@ -169,8 +257,8 @@ function addTool(state: UiState, event: UiEvent & { t: 'tool' }): UiState {
   const tools = [...(last.tools ?? []), {
     id: event.id,
     name: event.name,
-    status: event.status,
-    summary: event.summary,
+    status: 'running',
+    summary: event.summary || '',
   }];
   msgs[msgs.length - 1] = { ...last, tools };
   return { ...state, messages: msgs };
@@ -180,28 +268,9 @@ function updateTool(state: UiState, event: UiEvent & { t: 'tool_result' }): UiSt
   const msgs = state.messages.slice();
   const last = msgs[msgs.length - 1];
   if (!last || last.role !== 'assistant') return state;
-  const tools = (last.tools ?? []).map((tc) =>
-    tc.id === event.id ? { ...tc, status: event.status === 'ok' ? 'done' : 'error', summary: event.summary } : tc,
+  const tools = (last.tools ?? []).map((t) =>
+    t.id === event.id ? { ...t, status: event.status, summary: event.summary || t.summary } : t
   );
   msgs[msgs.length - 1] = { ...last, tools };
   return { ...state, messages: msgs };
 }
-
-export type UiEvent =
-  | { t: 'connected' }
-  | { t: 'disconnected' }
-  | { t: 'model'; modelId: string }
-  | { t: 'user_sent'; text: string }
-  | { t: 'run_started' }
-  | { t: 'assistant_message'; text: string }
-  | { t: 'token'; seq: number; text: string }
-  | { t: 'thinking'; text: string }
-  | { t: 'tool'; id: string; name: string; status: string; summary: string }
-  | { t: 'tool_result'; id: string; status: 'ok' | 'error'; summary: string }
-  | { t: 'session_list'; sessions: ReadonlyArray<SessionSummary> }
-  | { t: 'model_list'; models: ReadonlyArray<ModelView> }
-  | { t: 'done' }
-  | { t: 'failed'; error: string }
-  | { t: 'clear_error' }
-  | { t: 'toggle_palette' }
-  | { t: 'close_palette' };

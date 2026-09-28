@@ -1,14 +1,9 @@
 /**
  * The view layer. Pure functions: (state) => HTML string.
  *
- * No virtual DOM, no diffing, no framework. The whole thing is re-rendered on
- * each state change into a container that is scroll-anchored to the bottom.
- * That is deliberately simpler than a diff algorithm — the chat surface is
- * append-mostly, and a full re-render of a few hundred nodes is a sub-millisecond
- * operation. If that ever stops being true, this file is the only thing that
- * changes; the state machine and the client stay as they are.
+ * Adaptive Canvas UI (Feature G): Multi-panel layout with dynamic tools.
  */
-import type { UiState, Message, ToolCall } from './state.js';
+import type { UiState, Message, ToolCall, Panel } from './state.js';
 import { renderMarkdown, esc } from './markdown.js';
 import { t, isRtl, type Locale } from './i18n.js';
 
@@ -26,13 +21,87 @@ export function render(props: ViewProps): string {
   return `<div class="app" dir="${dir}">
   ${header(props)}
   ${state.error ? errorBanner(props) : ''}
-  <main class="messages" id="messages">
-    ${state.messages.length === 0 ? emptyState(props) : state.messages.map((m) => message(m, props)).join('')}
-    ${state.thinking && showThinking ? thinkingBlock(state.thinking) : ''}
-  </main>
+  <div class="main-layout">
+    ${panels(props)}
+    ${main(props)}
+  </div>
   ${state.paletteOpen ? paletteOverlay(props) : ''}
   ${composer(props)}
 </div>`;
+}
+
+/** Render all adaptive canvas panels */
+function panels(props: ViewProps): string {
+  const { state } = props;
+  const activePanel = state.panels.find((p) => p.id === state.activePanel);
+
+  return `<aside class="panels">
+    ${state.panels.map((panel) => panelRender(panel, props)).join('')}
+  </aside>`;
+}
+
+/** Render a single panel */
+function panelRender(panel: Panel, props: ViewProps): string {
+  const { state, locale } = props;
+  const isActive = panel.id === state.activePanel;
+  const visibleClass = panel.visible ? '' : 'hidden';
+
+  if (!panel.visible) return '';
+
+  return `<div class="panel ${visibleClass} ${isActive ? 'active' : ''}" data-panel-id="${panel.id}">
+    <div class="panel-header">
+      <span class="panel-title">${esc(panel.title)}</span>
+      <div class="panel-actions">
+        <button class="ghost panel-btn" title="${t('panel.toggle', locale)}" onclick="togglePanel('${panel.id}')">◀</button>
+        <button class="ghost panel-btn" title="${t('panel.pin', locale)}" onclick="togglePin('${panel.id}')">${panel.pinned ? '📌' : '📍'}</button>
+        <button class="ghost panel-btn" title="${t('panel.close', locale)}" onclick="closePanel('${panel.id}')">✕</button>
+      </div>
+    </div>
+    <div class="panel-content">
+      ${panelContent(panel, props)}
+    </div>
+  </div>`;
+}
+
+/** Render panel-specific content */
+function panelContent(panel: Panel, props: ViewProps): string {
+  const { locale } = props;
+
+  switch (panel.type) {
+    case 'browser':
+      return panel.browser ?
+        `<iframe src="${esc(panel.url || '')}" class="browser-frame"></iframe>` :
+        `<div class="panel-empty">${esc(t('panel.browser_empty', locale))}</div>`;
+
+    case 'terminal':
+      return panel.content ?
+        `<pre class="terminal-output">${esc(panel.content)}</pre>` :
+        `<div class="panel-empty">${esc(t('panel.terminal_empty', locale))}</div>`;
+
+    case 'file':
+    case 'code':
+      return panel.content ?
+        `<pre class="code-block">${esc(panel.content)}</pre>` :
+        `<div class="panel-empty">${esc(t('panel.code_empty', locale))}</div>`;
+
+    case 'tools':
+      return panel.content ?
+        `<div class="tools-list">${esc(panel.content)}</div>` :
+        `<div class="panel-empty">${esc(t('panel.tools_empty', locale))}</div>`;
+
+    default:
+      return `<div class="panel-empty">${esc(t('panel.empty', locale))}</div>`;
+  }
+}
+
+/** Main chat area */
+function main(props: ViewProps): string {
+  const { state, locale, showThinking } = props;
+
+  return `<main class="messages" id="messages">
+    ${state.messages.length === 0 ? emptyState(props) : state.messages.map((m) => message(m, props)).join('')}
+    ${state.thinking && showThinking ? thinkingBlock(state.thinking) : ''}
+  </main>`;
 }
 
 function header(props: ViewProps): string {
@@ -41,7 +110,8 @@ function header(props: ViewProps): string {
     ? t('status.connected', locale)
     : t('status.disconnected', locale);
   const dot = state.connected ? 'var(--good)' : 'var(--bad)';
-  const langLabel = locale === 'en' ? 'فا' : 'EN';
+  const langLabel = locale === 'en' ? 'فارسی' : 'EN';
+
   return `<header class="header">
   <div class="brand">
     <strong>${t('app.title', locale)}</strong>
@@ -107,6 +177,7 @@ function composer(props: ViewProps): string {
   const btn = busy
     ? `<button id="stop-btn" class="ghost">${t('chat.stop', locale)}</button>`
     : `<button id="send-btn" ${state.connected ? '' : 'disabled'}>${t('chat.send', locale)}</button>`;
+
   return `<footer class="composer">
   <textarea id="input" rows="1" placeholder="${t('chat.placeholder', locale)}"
     ${busy ? 'disabled' : ''} autocomplete="off"></textarea>

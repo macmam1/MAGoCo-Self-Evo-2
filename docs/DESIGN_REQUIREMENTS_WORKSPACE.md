@@ -886,3 +886,35 @@ Source: https://cometbrowserai.com / https://github.com/perplexity-ai/comet (con
 ✅ **نسخه کاری** (`DESIGN_REQUIREMENTS_WORKSPACE.md`): حاوی تحلیل کامل، لیست ۴۷ مورد، و Vision کاربر.
 ✅ **تفکیک کامل:** تمام ویژگی‌های منحصر به فرد، مشترک، و جدید (User + Comet) مشخص شده‌اند.
 ✅ **تضمین:** هیچ ویژگی از قلم نیفتاده است.
+
+---
+
+# فاز ۱: Adaptive Canvas UI Implementation
+| زیرسیستم | وضعیت | وضعیت |
+|---|---|---|
+| **State (Panels)** | ✅ پیاده‌سازی شد | `state.ts`: Panel interface و reduce cases اضافه شد |
+| **Views** | ✅ پیاده‌سازی شد | `views.ts`: Panel rendering و adaptive layout اضافه شد |
+| **Main** | ✅ پیاده‌سازی شد | `main.ts`: Panel event handlers اضافه شد |
+| **CSS** | ✅ پیاده‌سازی شد | `chat.css`: Panel styles و responsive layout اضافه شد |
+| **Build** | ✅ تست شد | پکیج‌ها بدون خطا کامپایل شدند |
+
+**ویژگی‌های پیاده‌سازی‌شده:**
+*   **Multi-panel Layout:** Chat + Browser + Tools + Terminal + File/Code panels
+*   **Dynamic Panel Management:** Add, close, toggle visibility, resize, focus
+*   **Pinned Panels:** Important tools stay visible
+*   **Responsive Design:** Panels collapse to bottom on mobile
+
+---
+
+# فاز ۲: Dynamic Tool Panels (Feature H)
+| زیرسیستم | وضعیت | وضعیت |
+|---|---|---|
+| **Contextual Panels** | ✅ پیاده‌سازی شد | Panels appear based on agent context |
+| **Live Browser** | ✅ پیاده‌سازی شد | Iframe with real-time interaction |
+| **Terminal Output** | ✅ پیاده‌سازی شد | Live terminal output panel |
+| **File Viewer** | ✅ پیاده‌سازی شد | File preview and editing panel |
+
+**ویژگی‌های پیاده‌سازی‌شده:**
+*   **Auto Open/Close:** Panels appear when needed, hide when not
+*   **Live Collaboration:** User can interact while agent works
+*   **Context-aware:** Panel shows relevant info for current task

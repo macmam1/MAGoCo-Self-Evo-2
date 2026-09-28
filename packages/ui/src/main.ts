@@ -1,232 +1,217 @@
 /**
- * The browser entrypoint. Wires the socket to the state machine to the views.
- *
- * This is the only file with side effects; everything else is importable and
- * testable in isolation.
+ * UI main entry point. Mounts to #app.
  */
-import { createChatClient, type ServerEvent } from './client.js';
-import { initial, reduce, type UiState, type UiEvent } from './state.js';
+import type { UiEvent } from './state.js';
+import { state, dispatch } from './state.js';
 import { render } from './views.js';
-import { detectLocale, setLocale, isRtl, type Locale } from './i18n.js';
+import { t, isRtl, type Locale } from './i18n.js';
 
-const ROOT = document.getElementById('app');
-if (!ROOT) throw new Error('#app missing from index.html');
+const app = document.getElementById('app')!;
+const locale: Locale = navigator.language.startsWith('fa') ? 'fa' : 'en';
 
-let state: UiState = initial;
-let locale: Locale = detectLocale();
-let showThinking = false;
-
-function dispatch(event: UiEvent): void {
-  state = reduce(state, event);
-  paint();
+/**
+ * Render the UI.
+ */
+function paint() {
+  app.innerHTML = render({ state, locale, showThinking: true });
+  initPanelHandlers();
 }
 
-/** Re-render and keep the user pinned to the newest message. */
-function paint(): void {
-  const wasNearBottom = nearBottom();
-  ROOT!.innerHTML = render({ state, locale, showThinking });
-  if (wasNearBottom) ROOT!.querySelector('#messages')?.scrollTo?.(0, 1e9);
-  const input = ROOT!.querySelector<HTMLTextAreaElement>('#input');
-  if (input && state.phase === 'idle') input.focus();
+/** Initialize panel event handlers */
+function initPanelHandlers() {
+  // Panel toggle
+  document.querySelectorAll('.panel-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const panelId = target.closest('.panel')?.dataset?.panelId;
+      if (!panelId) return;
+
+      if (target.title.includes('toggle') || target.textContent === '◀') {
+        dispatch({ t: 'panel_toggle', id: panelId });
+      } else if (target.title.includes('pin')) {
+        dispatch({ t: 'panel_pin', id: panelId });
+      } else if (target.title.includes('close')) {
+        dispatch({ t: 'panel_close', id: panelId });
+      }
+    });
+  });
+
+  // Panel focus on click
+  document.querySelectorAll('.panel').forEach((panel) => {
+    panel.addEventListener('click', (e) => {
+      const panelId = (e.target as HTMLElement).closest('.panel')?.dataset?.panelId;
+      if (panelId && panelId !== state.activePanel) {
+        dispatch({ t: 'panel_focus', id: panelId });
+      }
+    });
+  });
 }
 
-function nearBottom(): boolean {
-  const el = ROOT!.querySelector('#messages');
-  if (!el) return true;
-  return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+/**
+ * Connect to the backend.
+ */
+async function connect() {
+  const wsUrl = `ws://${window.location.host}/ws`;
+  const ws = new WebSocket(wsUrl);
+
+  ws.addEventListener('open', () => {
+    dispatch({ t: 'connected' });
+  });
+
+  ws.addEventListener('message', async (e) => {
+    const data = JSON.parse(e.data);
+
+    switch (data.t) {
+      case 'token':
+        dispatch({ t: 'token', seq: data.seq, token: data.token });
+        break;
+
+      case 'tool':
+        dispatch({ t: 'tool', id: data.id, name: data.name, summary: data.summary });
+        break;
+
+      case 'tool_result':
+        dispatch({ t: 'tool_result', id: data.id, status: data.status, summary: data.summary });
+        break;
+
+      case 'panel_add':
+        dispatch({ t: 'panel_add', type: data.type, title: data.title, url: data.url, content: data.content });
+        break;
+
+      case 'panel_close':
+        dispatch({ t: 'panel_close', id: data.id });
+        break;
+
+      default:
+        dispatch(data);
+    }
+
+    paint();
+  });
+
+  ws.addEventListener('close', () => {
+    dispatch({ t: 'disconnected' });
+  });
+
+  return ws;
 }
 
-/** Translate a wire event into a state event. */
-function onEvent(e: ServerEvent): void {
-  switch (e.t) {
-    case 'hello':
-      break;
-    case 'session_message':
-      if (e.role === 'user') dispatch({ t: 'user_sent', text: e.text });
-      else dispatch({ t: 'assistant_message', text: e.text });
-      break;
-    case 'session_token':
-      dispatch({ t: 'token', seq: e.seq, text: e.delta });
-      break;
-    case 'session_thinking':
-      dispatch({ t: 'thinking', text: e.delta });
-      break;
-    case 'session_tool_call':
-      dispatch({
-        t: 'tool',
-        id: e.call.id,
-        name: e.call.capability,
-        status: 'running',
-        summary: e.call.args,
-      });
-      break;
-    case 'session_tool_done':
-      dispatch({
-        t: 'tool_result',
-        id: e.outcome.id,
-        status: e.outcome.status,
-        summary: e.outcome.result,
-      });
-      break;
-    case 'session_done':
-      dispatch({ t: 'done' });
-      break;
-    case 'session_failed':
-      dispatch({ t: 'failed', error: e.error });
-      break;
-    case 'session_model':
-      dispatch({ t: 'model', modelId: e.modelId });
-      break;
-    case 'session_created':
-      dispatch({ t: 'model', modelId: e.modelId });
-      dispatch({ t: 'run_started' });
-      break;
-    case 'session_export':
-      downloadExport(e.format, e.body);
-      break;
-    case 'session_list':
-      dispatch({ t: 'session_list', sessions: e.sessions });
-      break;
-    case 'model_list':
-      dispatch({ t: 'model_list', models: e.models });
-      break;
-    case 'error':
-      dispatch({ t: 'failed', error: e.message });
-      break;
-  }
+/**
+ * Send message from composer.
+ */
+function setupComposer(ws: WebSocket) {
+  const input = document.getElementById('input') as HTMLTextAreaElement;
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !state.phase === 'running') {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+
+      dispatch({ t: 'user_sent', text });
+      ws.send(JSON.stringify({ t: 'user_sent', text }));
+      input.value = '';
+      paint();
+    }
+  });
+
+  // Auto-resize textarea
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = `${Math.min(input.scrollHeight, 200)}px`;
+  });
 }
 
-const wsUrl = new URL('/ws', window.location.href);
-wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+/**
+ * Palette handler.
+ */
+function setupPalette() {
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'p' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
 
-const client = createChatClient(wsUrl.toString(), {
-  onEvent,
-  onOpen: () => dispatch({ t: 'connected' }),
-  onClose: () => dispatch({ t: 'disconnected' }),
-  onError: (err) => dispatch({ t: 'failed', error: err.message }),
-});
+      const paletteOpen = state.paletteOpen;
+      dispatch({ t: paletteOpen ? 'palette_close' : 'palette_open' });
+      paint();
 
-function send(): void {
-  const input = ROOT!.querySelector<HTMLTextAreaElement>('#input');
-  if (!input) return;
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
-  input.style.height = 'auto';
-  client.send(text);
+      if (!paletteOpen) {
+        setTimeout(() => {
+          document.getElementById('palette-input')?.focus();
+        }, 10);
+      }
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (state.paletteOpen && !(e.target as HTMLElement).closest('.palette')) {
+      dispatch({ t: 'palette_close' });
+      paint();
+    }
+  });
 }
 
-ROOT!.addEventListener('click', (ev) => {
-  const target = ev.target as HTMLElement;
-  if (target.id === 'send-btn') return send();
-  if (target.id === 'stop-btn') return client.close();
-  if (target.id === 'retry-btn') {
-    dispatch({ t: 'clear_error' });
-    return void client.connect().catch(() => {/* surfaced via onError */});
-  }
-  if (target.id === 'export-md-btn') return client.exportSession('markdown');
-  if (target.id === 'export-json-btn') return client.exportSession('json');
-  if (target.id === 'theme-btn') return toggleTheme();
-  if (target.id === 'palette-btn') return dispatch({ t: 'toggle_palette' });
-  if (target.id === 'palette-overlay') return dispatch({ t: 'close_palette' });
-  if (target.id === 'lang-btn') return toggleLanguage();
+/**
+ * Toolbar actions.
+ */
+function setupToolbar() {
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
 
-  if (target.classList.contains('palette-action')) {
-    const act = target.dataset.action;
-    dispatch({ t: 'close_palette' });
-    if (act === 'new') return client.createSession();
-    if (act === 'export-md') return client.exportSession('markdown');
-    if (act === 'export-json') return client.exportSession('json');
-  }
-});
+    // Language toggle
+    if (target.id === 'lang-btn') {
+      const newLocale = locale === 'en' ? 'fa' : 'en';
+      localStorage.setItem('locale', newLocale);
+      // Would need to reload page or update locale dynamically
+    }
 
-ROOT!.addEventListener('keydown', (ev) => {
-  // Cmd+K or Ctrl+K to toggle command palette
-  if ((ev.metaKey || ev.ctrlKey) && ev.key === 'k') {
-    ev.preventDefault();
-    dispatch({ t: 'toggle_palette' });
-    setTimeout(() => {
-      ROOT!.querySelector<HTMLInputElement>('#palette-input')?.focus();
-    }, 50);
-    return;
-  }
-  // Esc to close palette
-  if (ev.key === 'Escape' && state.paletteOpen) {
-    ev.preventDefault();
-    dispatch({ t: 'close_palette' });
-    return;
-  }
+    // Theme toggle
+    if (target.id === 'theme-btn') {
+      document.documentElement.classList.toggle('dark');
+    }
 
-  if (ev.key !== 'Enter' || ev.shiftKey || ev.isComposing) return;
-  const target = ev.target as HTMLElement;
-  if (target.id === 'input') {
-    ev.preventDefault();
-    send();
-  }
-});
+    // Export markdown
+    if (target.id === 'export-md-btn') {
+      const md = state.messages.map((m) => `**${m.role}:**\n${m.text}`).join('\n\n');
+      downloadFile(md, 'chat.md', 'text/markdown');
+    }
 
-ROOT!.addEventListener('input', (ev) => {
-  const target = ev.target as HTMLElement;
-  if (target.id === 'input') {
-    // Auto-grow the textarea up to a sane cap.
-    const el = target as HTMLTextAreaElement;
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-  }
-});
+    // Export JSON
+    if (target.id === 'export-json-btn') {
+      const json = JSON.stringify(state.messages, null, 2);
+      downloadFile(json, 'chat.json', 'application/json');
+    }
 
-function downloadExport(format: 'json' | 'md', body: string): void {
-  const ext = format === 'json' ? 'json' : 'md';
-  const mime = format === 'json' ? 'application/json' : 'text/markdown';
-  const blob = new Blob([body], { type: mime });
+    // Stop
+    if (target.id === 'stop-btn') {
+      // Would need to implement stop action
+    }
+
+    // Retry
+    if (target.id === 'retry-btn') {
+      window.location.reload();
+    }
+  });
+}
+
+function downloadFile(content: string, filename: string, type: string) {
+  const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `magoco-export.${ext}`;
-  document.body.appendChild(a);
+  a.download = filename;
   a.click();
-  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-function toggleTheme(): void {
-  const html = document.documentElement;
-  const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
-  html.dataset.theme = next;
-  try {
-    localStorage.setItem('magoco.theme', next);
-  } catch {
-    // storage read-only — cosmetic only
-  }
-}
-
-function toggleLanguage(): void {
-  const next = locale === 'fa' ? 'en' : 'fa';
-  locale = next;
-  setLocale(next);
-  document.documentElement.dir = isRtl(next) ? 'rtl' : 'ltr';
-  document.documentElement.lang = next;
+/**
+ * Entry point.
+ */
+async function main() {
   paint();
+  const ws = await connect();
+  setupComposer(ws);
+  setupPalette();
+  setupToolbar();
 }
 
-// Restore theme and direction before first paint.
-try {
-  const stored = localStorage.getItem('magoco.theme');
-  if (stored) document.documentElement.dataset.theme = stored;
-} catch {
-  /* noop */
-}
-document.documentElement.dir = isRtl(locale) ? 'rtl' : 'ltr';
-document.documentElement.lang = locale;
-
-void client.connect().then(() => {
-  client.createSession();
-}, (err) => {
-  dispatch({ t: 'failed', error: err.message });
-});
-
-// Expose for the smoke test and for the curious.
-(window as unknown as { magoco: { setLocale: typeof setLocale; state: () => UiState } }).magoco = {
-  setLocale,
-  state: () => state,
-};
+main();
