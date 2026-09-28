@@ -27,6 +27,7 @@ export function render(props: ViewProps): string {
   </div>
   ${state.paletteOpen ? paletteOverlay(props) : ''}
   ${composer(props)}
+  ${hitlModal(state, locale)}
 </div>`;
 }
 
@@ -60,7 +61,8 @@ function panelRender(panel: Panel, props: ViewProps): string {
     <div class="panel-content">
       ${panelContent(panel, props)}
     </div>
-  </div>`;
+    ${hitlModal(state, locale)}
+</div>`;
 }
 
 /** Render panel-specific content */
@@ -71,36 +73,43 @@ function panelContent(panel: Panel, props: ViewProps): string {
     case 'browser':
       return panel.browser ?
         `<iframe src="${esc(panel.url || '')}" class="browser-frame"></iframe>` :
-        `<div class="panel-empty">${esc(t('panel.browser_empty', locale))}</div>`;
+        `<div class="panel-empty">${esc(t('panel.browser_empty', locale))}  ${hitlModal(state, locale)}
+</div>`;
 
     case 'terminal':
       return panel.content ?
         `<pre class="terminal-output">${esc(panel.content)}</pre>` :
-        `<div class="panel-empty">${esc(t('panel.terminal_empty', locale))}</div>`;
+        `<div class="panel-empty">${esc(t('panel.terminal_empty', locale))}  ${hitlModal(state, locale)}
+</div>`;
 
     case 'file':
     case 'code':
       return panel.content ?
         `<pre class="code-block">${esc(panel.content)}</pre>` :
-        `<div class="panel-empty">${esc(t('panel.code_empty', locale))}</div>`;
+        `<div class="panel-empty">${esc(t('panel.code_empty', locale))}  ${hitlModal(state, locale)}
+</div>`;
 
             case 'session-log':
       return panel.content ?
         `<div class="session-log">${esc(panel.content)}</div>` :
-        `<div class="panel-empty">${esc(t('panel.session_log_empty', locale))}</div>`;
+        `<div class="panel-empty">${esc(t('panel.session_log_empty', locale))}  ${hitlModal(state, locale)}
+</div>`;
 
 case 'workflow':
       return panel.content ?
         `<div class="workflow-canvas">${esc(panel.content)}</div>` :
-        `<div class="panel-empty">${esc(t('panel.workflow_empty', locale))}</div>`;
+        `<div class="panel-empty">${esc(t('panel.workflow_empty', locale))}  ${hitlModal(state, locale)}
+</div>`;
 
 case 'tools':
       return panel.content ?
         `<div class="tools-list">${esc(panel.content)}</div>` :
-        `<div class="panel-empty">${esc(t('panel.tools_empty', locale))}</div>`;
+        `<div class="panel-empty">${esc(t('panel.tools_empty', locale))}  ${hitlModal(state, locale)}
+</div>`;
 
     default:
-      return `<div class="panel-empty">${esc(t('panel.empty', locale))}</div>`;
+      return `<div class="panel-empty">${esc(t('panel.empty', locale))}  ${hitlModal(state, locale)}
+</div>`;
   }
 }
 
@@ -142,11 +151,13 @@ function errorBanner(props: ViewProps): string {
   return `<div class="banner error-banner" role="alert">
   <strong>${t('error.label', locale)}:</strong> ${esc(state.error ?? '')}
   <button class="ghost" id="retry-btn">${t('error.retry', locale)}</button>
+  ${hitlModal(state, locale)}
 </div>`;
 }
 
 function emptyState(props: ViewProps): string {
-  return `<div class="empty">${esc(t('chat.empty', props.locale))}</div>`;
+  return `<div class="empty">${esc(t('chat.empty', props.locale))}  ${hitlModal(state, locale)}
+</div>`;
 }
 
 function message(m: Message, props: ViewProps): string {
@@ -171,6 +182,7 @@ function toolCard(tool: ToolCall): string {
   <span class="tool-name">${esc(tool.name)}</span>
   <span class="tool-status">${esc(tool.status)}</span>
   <span class="tool-summary">${esc(tool.summary)}</span>
+  ${hitlModal(state, locale)}
 </div>`;
 }
 
@@ -199,6 +211,24 @@ function composer(props: ViewProps): string {
 </footer>`;
 }
 
+
+// HITL (Human-in-the-Loop) Modal
+function hitlModal(state: UiState, locale: Locale): string {
+  if (!state.hitlPending) return '';
+  const { type, message } = state.hitlPending;
+  return `<dialog class="hitl-modal" open>
+  <div class="hitl-content">
+    <h3>${t('hitl.title', locale)}</h3>
+    <p>${esc(message)}</p>
+    ${type === 'captcha' ? `<input type="text" id="hitl-input" placeholder="${t('hitl.captcha_placeholder', locale)}" />` : ''}
+    <div class="hitl-actions">
+      <button id="hitl-solve">${t('hitl.solve', locale)}</button>
+      <button id="hitl-cancel">${t('hitl.cancel', locale)}</button>
+    </div>
+  </div>
+</dialog>`;
+}
+
 function paletteOverlay(props: ViewProps): string {
   const { locale } = props;
   return `<div class="palette-overlay" id="palette-overlay">
@@ -210,5 +240,6 @@ function paletteOverlay(props: ViewProps): string {
       <button class="palette-action" data-action="export-json">${t('palette.export_json', locale)}</button>
     </div>
   </div>
+  ${hitlModal(state, locale)}
 </div>`;
 }

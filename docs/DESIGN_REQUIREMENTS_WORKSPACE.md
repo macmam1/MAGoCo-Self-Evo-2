@@ -912,6 +912,25 @@ Source: https://cometbrowserai.com / https://github.com/perplexity-ai/comet (con
 
 ---
 
+
+---
+
+# فاز ۵: Browser Automation + HITL (Human-in-the-Loop) (Feature I)
+| زیرسیستم | وضعیت | وضعیت |
+|---|---|---|
+| **HITL Events** | ✅ پیاده‌سازی شد | hitl_request, hitl_response, hitl_cancel events |
+| **HITL Modal** | ✅ پیاده‌سازی شد | UI modal for CAPTCHA solving and form filling |
+| **HITL Styles** | ✅ پیاده‌سازی شد | CSS styling for HITL modal |
+| **HITL Handlers** | ✅ پیاده‌سازی شد | Event handlers in main.ts |
+| **Build** | ✅ تست شد | پکیج‌ها بدون خطا کامپایل شدند |
+
+**ویژگی‌های پیاده‌سازی‌شده:**
+*   **CAPTCHA Solving:** Browser shows CAPTCHA challenge, user solves it in modal
+*   **Form Completion:** Agent pauses for user to fill complex forms
+*   **Permission Requests:** Agent asks for user permission before actions
+*   **Live Browser:** User can see and interact with browser panel while agent works
+*   **Seamless Handoff:** Agent resumes automatically after HITL solution
+
 # فاز ۴: Session Log (Source of Truth) (Feature C)
 | زیرسیستم | وضعیت | وضعیت |
 |---|---|---|

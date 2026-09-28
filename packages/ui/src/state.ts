@@ -83,6 +83,7 @@ export interface UiState {
   readonly sessions: ReadonlyArray<SessionSummary>;
   readonly models: ReadonlyArray<ModelView>;
   readonly paletteOpen: boolean;
+  readonly hitlPending: { id: string; type: 'captcha' | 'form' | 'permission'; message: string; data?: any } | null;
 
   // Adaptive Canvas (Feature G)
   readonly panels: ReadonlyArray<Panel>;
@@ -135,6 +136,11 @@ export type UiEvent =
   // Session Log (Feature C)
   | { t: 'session_log_add'; id: string; timestamp: string; type: string; data: string }
   | { t: 'session_log_clear' }
+  // Human-in-the-Loop (Feature I - HITL)
+  | { t: 'hitl_request'; id: string; type: 'captcha' | 'form' | 'permission'; message: string; data?: any }
+  | { t: 'hitl_response'; id: string; solution: string }
+  | { t: 'hitl_cancel'; id: string }
+
 
 
 
@@ -268,6 +274,24 @@ export function reduce(state: UiState, event: UiEvent): UiState {
     case 'panel_focus': {
       return { ...state, activePanel: event.id };
     }
+
+
+    case 'hitl_request':
+      return {
+        ...state,
+        hitlPending: {
+          id: event.id,
+          type: event.type,
+          message: event.message,
+          data: event.data
+        }
+      };
+
+    case 'hitl_response':
+      return { ...state, hitlPending: null };
+
+    case 'hitl_cancel':
+      return { ...state, hitlPending: null };
 
     case 'panel_pin': {
       return {

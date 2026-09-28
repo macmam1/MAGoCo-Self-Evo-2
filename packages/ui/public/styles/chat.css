@@ -435,3 +435,67 @@
 .session-log-entry.event:hover {
   border-left-color: var(--accent);
 }
+
+
+/* HITL (Human-in-the-Loop) Modal */
+.hitl-modal {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  padding: 0;
+  max-width: 400px;
+  width: 100%;
+  background: var(--bg);
+}
+
+.hitl-modal::backdrop {
+  background: rgba(0,0,0,0.5);
+}
+
+.hitl-content {
+  padding: 24px;
+}
+
+.hitl-content h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.hitl-content p {
+  margin: 0 0 16px;
+  color: var(--text-dim);
+}
+
+.hitl-content input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.hitl-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.hitl-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.hitl-actions button:first-child {
+  background: var(--accent);
+  color: white;
+}
+
+.hitl-actions button:last-child {
+  background: var(--bg-soft);
+  color: var(--text);
+}

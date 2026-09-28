@@ -36,7 +36,19 @@ function initPanelHandlers() {
     });
   });
 
-  // Panel focus on click
+  
+// HITL (Human-in-the-Loop) handlers
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'hitl-solve') {
+    const input = (document.getElementById('hitl-input') as HTMLInputElement)?.value || '';
+    dispatch({ t: 'hitl_response', id: state.hitlPending!.id, solution: input });
+    (document.getElementById('hitl-input') as HTMLInputElement)?.focus();
+  } else if (e.target.id === 'hitl-cancel') {
+    dispatch({ t: 'hitl_cancel', id: state.hitlPending!.id });
+  }
+});
+
+// Panel focus on click
   document.querySelectorAll('.panel').forEach((panel) => {
     panel.addEventListener('click', (e) => {
       const panelId = (e.target as HTMLElement).closest('.panel')?.dataset?.panelId;
