@@ -336,3 +336,61 @@
     min-height: 150px;
   }
 }
+
+
+/* Workflow Visualization (Feature H) */
+.workflow-canvas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 16px;
+  padding: 12px;
+  overflow-x: auto;
+}
+
+.workflow-node {
+  background: var(--bg-soft);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.workflow-node.running {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
+  animation: pulse 2s infinite;
+}
+
+.workflow-node.done {
+  border-color: var(--good);
+}
+
+.workflow-node.failed {
+  border-color: var(--error);
+}
+
+.workflow-node-label {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.workflow-node-status {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Simple visual workflow lines (using CSS pseudo-elements) */
+.workflow-connector {
+  position: absolute;
+  height: 2px;
+  background: var(--border);
+  z-index: -1;
+}

@@ -84,7 +84,12 @@ function panelContent(panel: Panel, props: ViewProps): string {
         `<pre class="code-block">${esc(panel.content)}</pre>` :
         `<div class="panel-empty">${esc(t('panel.code_empty', locale))}</div>`;
 
-    case 'tools':
+        case 'workflow':
+      return panel.content ?
+        `<div class="workflow-canvas">${esc(panel.content)}</div>` :
+        `<div class="panel-empty">${esc(t('panel.workflow_empty', locale))}</div>`;
+
+case 'tools':
       return panel.content ?
         `<div class="tools-list">${esc(panel.content)}</div>` :
         `<div class="panel-empty">${esc(t('panel.tools_empty', locale))}</div>`;

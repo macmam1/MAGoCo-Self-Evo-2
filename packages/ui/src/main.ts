@@ -78,7 +78,19 @@ async function connect() {
         dispatch({ t: 'panel_add', type: data.type, title: data.title, url: data.url, content: data.content });
         break;
 
-      case 'panel_close':
+          case 'workflow_add':
+      dispatch({ t: 'workflow_add', id: data.id, name: data.name, nodes: data.nodes || [], edges: data.edges || [] });
+      break;
+
+    case 'workflow_remove':
+      dispatch({ t: 'workflow_remove', id: data.id });
+      break;
+
+    case 'workflow_status':
+      dispatch({ t: 'workflow_status', id: data.id, status: data.status });
+      break;
+
+case 'panel_close':
         dispatch({ t: 'panel_close', id: data.id });
         break;
 

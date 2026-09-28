@@ -47,6 +47,29 @@ export interface Panel {
   readonly pinned: boolean;
 }
 
+
+// Workflow visualization (Feature H)
+export interface WorkflowNode {
+  id: string;
+  label: string;
+  status: 'pending' | 'running' | 'done' | 'failed';
+  kind: 'action' | 'condition' | 'parallel' | 'loop' | 'hitl';
+}
+
+export interface WorkflowEdge {
+  from: string;
+  to: string;
+  label?: string;
+}
+
+export interface WorkflowDisplay {
+  id: string;
+  name: string;
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  running: boolean;
+}
+
 export interface UiState {
   readonly phase: RunPhase;
   readonly modelId: string | null;
@@ -104,6 +127,12 @@ export type UiEvent =
   | { t: 'panel_resize'; id: string; size: number }
   | { t: 'panel_focus'; id: string }
   | { t: 'panel_pin'; id: string };
+
+  | { t: 'workflow_add'; id: string; name: string; nodes: WorkflowNode[]; edges: WorkflowEdge[] }
+  | { t: 'workflow_remove'; id: string }
+  | { t: 'workflow_status'; id: string; status: 'running' | 'completed' }
+  | { t: 'workflow_node_status'; nodeId: string; status: WorkflowNode['status'] }
+
 
 // Simple in-memory store
 const store = { state };
@@ -243,6 +272,38 @@ export function reduce(state: UiState, event: UiEvent): UiState {
           p.id === event.id ? { ...p, pinned: !p.pinned } : p
         ),
       };
+    }
+
+
+    case 'workflow_add': {
+      const existing = state.panels.find(p => p.id === `workflow-${event.id}`);
+      if (existing) return state;
+      const workflowPanel: Panel = {
+        id: `workflow-${event.id}`,
+        type: 'workflow',
+        title: event.name,
+        visible: true,
+        size: 40,
+        pinned: false,
+      };
+      return { ...state, panels: [...state.panels, workflowPanel] };
+    }
+
+    case 'workflow_remove': {
+      return {
+        ...state,
+        panels: state.panels.filter(p => p.id !== `workflow-${event.id}`),
+      };
+    }
+
+    case 'workflow_status': {
+      // Would update workflow panel content with status
+      return state;
+    }
+
+    case 'workflow_node_status': {
+      // Would update specific node status in workflow panel
+      return state;
     }
 
     default:
