@@ -38,7 +38,7 @@ export interface Message {
 // Adaptive Canvas Panels (Feature G)
 export interface Panel {
   readonly id: string;
-  readonly type: 'chat' | 'browser' | 'tools' | 'terminal' | 'file' | 'code';
+  readonly type: 'chat' | 'browser' | 'tools' | 'terminal' | 'file' | 'code' | 'session-log' | 'workflow';
   readonly title: string;
   readonly url?: string;        // For browser panel
   readonly content?: string;  // For tools/file/code panels
@@ -132,6 +132,10 @@ export type UiEvent =
   | { t: 'workflow_remove'; id: string }
   | { t: 'workflow_status'; id: string; status: 'running' | 'completed' }
   | { t: 'workflow_node_status'; nodeId: string; status: WorkflowNode['status'] }
+  // Session Log (Feature C)
+  | { t: 'session_log_add'; id: string; timestamp: string; type: string; data: string }
+  | { t: 'session_log_clear' }
+
 
 
 // Simple in-memory store

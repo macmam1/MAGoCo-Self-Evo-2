@@ -394,3 +394,44 @@
   background: var(--border);
   z-index: -1;
 }
+
+
+/* Session Log (Feature C) */
+.session-log {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-y: auto;
+}
+
+.session-log-entry {
+  padding: 4px 8px;
+  border-left: 2px solid var(--border);
+  margin-bottom: 4px;
+  background: var(--bg-softest);
+}
+
+.session-log-entry:hover {
+  background: var(--bg-soft);
+}
+
+.session-log-time {
+  color: var(--text-faint);
+  font-size: 10px;
+  margin-right: 8px;
+}
+
+.session-log-type {
+  color: var(--accent);
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.session-log-data {
+  color: var(--text-dim);
+  word-break: break-all;
+}
+
+.session-log-entry.event:hover {
+  border-left-color: var(--accent);
+}
