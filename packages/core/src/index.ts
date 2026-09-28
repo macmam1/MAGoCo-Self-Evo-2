@@ -68,3 +68,15 @@ export { HEALTH_CAPABILITY, healthDef, type HealthProvider } from './capabilitie
 export { RUN_CAPABILITY, runDef, type RunProvider } from './capabilities/run.js';
 export { BROWSER_CAPABILITY, browserDef, type BrowserProvider } from './capabilities/browser.js';
 export { TERMINAL_CAPABILITY, termDef, type TermProvider } from './capabilities/terminal.js';
+
+
+
+export { MemoryStore } from './memory/store.js';
+export type { MemoryEntry, MemoryStore as MemoryStoreType, MemoryConfig } from './memory/types.js';
+
+export type { AuthStore } from './security/auth.js';
+export type { AuthContext, AuthStore as AuthStoreType, AuthCredentials } from './security/auth.js';
+
+export { SecretStore } from './security/secret-store.js';
+export type { SecretEntry } from './security/secret-store.js';
+
