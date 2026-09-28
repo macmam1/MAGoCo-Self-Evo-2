@@ -499,3 +499,60 @@
   background: var(--bg-soft);
   color: var(--text);
 }
+
+
+/* RAG (Feature K) */
+.rag-panel {
+  padding: 12px;
+}
+
+.rag-chunk {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-left: 2px solid var(--accent);
+  background: var(--bg-softest);
+  border-radius: 0 4px 4px 0;
+}
+
+.rag-chunk:hover {
+  background: var(--bg-soft);
+}
+
+.rag-source {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.rag-score {
+  font-size: 10px;
+  color: var(--accent);
+  float: right;
+}
+
+.rag-content {
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* Collaboration (Feature L) */
+.collab-panel {
+  padding: 12px;
+  min-height: 200px;
+}
+
+.collab-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  margin-bottom: 4px;
+  background: var(--bg-softest);
+  border-radius: 4px;
+}
+
+.collab-cursor {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}

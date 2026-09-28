@@ -95,6 +95,14 @@ function panelContent(panel: Panel, props: ViewProps): string {
         `<div class="panel-empty">${esc(t('panel.session_log_empty', locale))}  ${hitlModal(state, locale)}
 </div>`;
 
+            case 'experience':
+      return `<div class="panel-empty">${esc(t('panel.experience_empty', locale))}</div>`;
+case 'collab':
+      return `<div class="collab-panel">${esc(t('panel.collab_empty', locale))}</div>`;
+case 'rag':
+      return panel.content ?
+        `<div class="rag-panel">${esc(panel.content)}</div>` :
+        `<div class="panel-empty">${esc(t('panel.rag_empty', locale))}</div>`;
 case 'workflow':
       return panel.content ?
         `<div class="workflow-canvas">${esc(panel.content)}</div>` :

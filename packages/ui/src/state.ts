@@ -21,6 +21,57 @@ export interface SessionSummary {
   readonly updatedAt: number;
 }
 
+
+// RAG (Feature K)
+export interface RAGChunk {
+  id: string;
+  source: string;
+  content: string;
+  score: number;
+  context: string;
+}
+
+
+// Collaboration (Feature L)
+export interface Collaborator {
+  id: string;
+  name: string;
+  cursor?: { x: number; y: number };
+  color: string;
+}
+
+
+// Experience Engine (Feature M)
+export interface Experience {
+  id: string;
+  prompt: string;
+  embedding: number[];
+  score: number;
+  timestamp: string;
+}
+
+export interface ExperienceEvent {
+  type: 'capture' | 'embed' | 'retrieve' | 'inject';
+  data: any;
+  timestamp: string;
+}
+
+
+export interface CollaborationEvent {
+  userId: string;
+  type: 'cursor' | 'select' | 'edit';
+  data: any;
+  timestamp: string;
+}
+
+
+export interface RAGResult {
+  query: string;
+  chunks: RAGChunk[];
+  searchType: 'hybrid' | 'vector' | 'keyword';
+}
+
+
 export interface ModelView {
   readonly id: string;
   readonly label: string;
@@ -38,7 +89,7 @@ export interface Message {
 // Adaptive Canvas Panels (Feature G)
 export interface Panel {
   readonly id: string;
-  readonly type: 'chat' | 'browser' | 'tools' | 'terminal' | 'file' | 'code' | 'session-log' | 'workflow';
+  readonly type: 'chat' | 'browser' | 'tools' | 'terminal' | 'file' | 'code' | 'session-log' | 'workflow' | 'rag' | 'collab';
   readonly title: string;
   readonly url?: string;        // For browser panel
   readonly content?: string;  // For tools/file/code panels
